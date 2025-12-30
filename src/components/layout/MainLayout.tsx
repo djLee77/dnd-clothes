@@ -1,5 +1,6 @@
 import React from 'react'
-import { Toolbar } from '../ui/Toolbar'
+
+import { BottomToolbar } from '../ui/BottomToolbar'
 import { Sidebar } from '../ui/Sidebar'
 import { useUiStore } from '../../store/uiStore'
 import { PanelRightOpen } from 'lucide-react'
@@ -25,9 +26,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
            {children}
         </div>
 
-        {/* Floating Toolbar */}
-        <div className="absolute bottom-0 left-0 w-full flex justify-center pb-8 pointer-events-none z-20">
-           <Toolbar />
+
+
+        {/* Contextual Bottom Toolbar (New) */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
+           <BottomToolbar />
         </div>
         
         {/* Sidebar Toggle Button (when sidebar is closed) */}

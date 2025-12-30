@@ -1,4 +1,4 @@
-import { Sparkles, LayoutGrid, Users, ShoppingBag, Share2, UserCircle } from 'lucide-react'
+import { LayoutGrid, UserCircle, Shirt } from 'lucide-react'
 
 export const Navbar = () => {
   return (
@@ -6,43 +6,22 @@ export const Navbar = () => {
       <div className="flex items-center gap-1 p-1 bg-white/80 backdrop-blur-md rounded-full shadow-lg border border-white/20 ring-1 ring-black/5 pr-2">
         
         {/* Logo Section */}
-        <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full mr-2">
-            <Sparkles size={18} className="text-yellow-300" />
-            <span className="font-semibold text-sm tracking-wide">Antigravity</span>
+        <div className="flex items-center gap-2 pl-3 pr-2 mr-2">
+            <div className="bg-primary text-primary-foreground p-1.5 rounded-full shadow-sm">
+                <Shirt size={18} strokeWidth={2.5} />
+            </div>
+            <span className="font-bold text-lg tracking-tight text-primary">Wardrobe</span>
         </div>
 
         {/* Menu Items */}
-        <div className="hidden md:flex items-center gap-1">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary hover:bg-black/5 rounded-full transition-all active:scale-95">
-                <LayoutGrid size={16} />
-                <span>Projects</span>
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary hover:bg-black/5 rounded-full transition-all active:scale-95">
-                <Users size={16} />
-                <span>Community</span>
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-primary hover:bg-black/5 rounded-full transition-all active:scale-95">
-                <ShoppingBag size={16} />
-                <span>Store</span>
-            </button>
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-6 bg-gray-200 mx-2 hidden md:block" />
-
-        {/* Action Buttons */}
         <div className="flex items-center gap-1">
-            <button 
-                className="p-2.5 text-gray-600 hover:text-primary hover:bg-black/5 rounded-full transition-all active:scale-95"
-                title="Share"
-            >
-                <Share2 size={18} />
+            <button className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-primary hover:bg-black/5 rounded-full transition-all active:scale-95">
+                <LayoutGrid size={18} />
+                <span>대쉬보드</span>
             </button>
-            <button 
-                className="p-2.5 text-gray-600 hover:text-primary hover:bg-black/5 rounded-full transition-all active:scale-95"
-                title="Profile"
-            >
+            <button className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-gray-600 hover:text-primary hover:bg-black/5 rounded-full transition-all active:scale-95">
                 <UserCircle size={18} />
+                <span>마이페이지(로그인)</span>
             </button>
         </div>
 

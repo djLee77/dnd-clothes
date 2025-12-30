@@ -78,10 +78,12 @@ export const MainCanvas = () => {
   return (
     <div 
         ref={containerRef} 
-        className="w-full h-full bg-white overflow-hidden"
+        className="w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px] overflow-hidden relative"
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
     >
+      {/* Lighting Vignette */}
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(255,255,255,0.8)_100%)] z-0" />
       <Stage
         ref={stageRef}
         width={dimensions.width}
@@ -127,15 +129,7 @@ export const MainCanvas = () => {
         }}
       >
         <Layer>
-            {/* Grid Pattern Background */}
-           <Rect
-              x={-5000}
-              y={-5000}
-              width={10000}
-              height={10000}
-              fillPatternImage={undefined} 
-              fill="#ffffff"
-           />
+
            
            {items.map(item => {
                 if (item.type === 'image' && item.src) {
