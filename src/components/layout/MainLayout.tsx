@@ -17,7 +17,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     <div className="w-screen h-screen flex overflow-hidden bg-white transition-colors duration-300">
       <Navbar />
       {/* Main Content Area */}
-      <div className="flex-1 relative flex flex-col overflow-hidden">
+      <div className="flex-1 relative flex flex-col overflow-hidden pt-16">
         {/* Top Header Placeholder (optional) */}
         {/* <div className="h-14 bg-white border-b z-10"></div> */}
 

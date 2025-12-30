@@ -99,7 +99,7 @@ export const Sidebar = () => {
   if (!isSidebarOpen) return null
 
   return (
-    <div className="w-80 h-[calc(100vh-2rem)] m-4 bg-white/60 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto border border-white/40 transition-all duration-300">
+    <div className="w-80 h-[calc(100vh-6rem)] mt-20 mr-4 mb-4 bg-white/60 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] flex flex-col pointer-events-auto border border-white/40 transition-all duration-300">
       <div className="h-20 flex items-center justify-between px-8 border-b border-white/20">
         <h2 className="font-bold text-primary text-2xl tracking-tighter">Properties</h2>
         <button

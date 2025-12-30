@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Stage, Layer, Rect } from 'react-konva'
+import { Stage, Layer, Rect, Transformer } from 'react-konva'
 import { useSceneStore } from '../../store/sceneStore'
 import { useCanvasStore } from '../../store/canvasStore'
 import { useUiStore } from '../../store/uiStore'
@@ -12,6 +12,7 @@ export const MainCanvas = () => {
   const { items, addItem, updateItem } = useSceneStore()
   const { selectedItemId, setSelectedItemId } = useUiStore()
   const stageRef = useRef<any>(null)
+  const transformerRef = useRef<any>(null)
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -28,6 +29,23 @@ export const MainCanvas = () => {
 
     return () => window.removeEventListener('resize', updateDimensions)
   }, [])
+
+  // Update Transformer selection
+  useEffect(() => {
+    if (selectedItemId && transformerRef.current && stageRef.current) {
+      const selectedNode = stageRef.current.findOne('#' + selectedItemId)
+      if (selectedNode) {
+        transformerRef.current.nodes([selectedNode])
+        transformerRef.current.getLayer().batchDraw()
+      } else {
+        transformerRef.current.nodes([])
+      }
+    } else if (transformerRef.current) {
+      transformerRef.current.nodes([])
+      transformerRef.current.getLayer().batchDraw()
+    }
+  }, [selectedItemId, items])
+
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -53,6 +71,8 @@ export const MainCanvas = () => {
                 height: 200,
                 fill: 'transparent',
                 rotation: 0,
+                scaleX: 1,
+                scaleY: 1,
                 src: src,
                 name: name,
                 price: price,
@@ -68,7 +88,9 @@ export const MainCanvas = () => {
                 width: 100,
                 height: 100,
                 fill: 'blue',
-                rotation: 0
+                rotation: 0,
+                scaleX: 1,
+                scaleY: 1
             })
         }
       }
@@ -129,20 +151,21 @@ export const MainCanvas = () => {
         }}
       >
         <Layer>
-
-           
            {items.map(item => {
                 if (item.type === 'image' && item.src) {
                     return (
                         <URLImage
                             key={item.id}
+                            id={item.id}
                             src={item.src}
                             x={item.x}
                             y={item.y}
                             width={item.width}
                             height={item.height}
-                            draggable
+                            scaleX={item.scaleX || 1}
+                            scaleY={item.scaleY || 1}
                             rotation={item.rotation}
+                            draggable
                             isSelected={selectedItemId === item.id}
                             onClick={() => {
                                 setSelectedItemId(item.id)
@@ -153,25 +176,48 @@ export const MainCanvas = () => {
                                     y: e.target.y()
                                 })
                             }}
+                            onTransformEnd={(e) => {
+                                const node = e.target
+                                updateItem(item.id, {
+                                    x: node.x(),
+                                    y: node.y(),
+                                    rotation: node.rotation(),
+                                    scaleX: node.scaleX(),
+                                    scaleY: node.scaleY(),
+                                })
+                            }}
                         />
                     )
                 }
                 return (
                     <Rect
                         key={item.id}
+                        id={item.id}
                         x={item.x}
                         y={item.y}
                         width={item.width}
                         height={item.height}
+                        scaleX={item.scaleX || 1}
+                        scaleY={item.scaleY || 1}
                         fill={item.fill}
+                        rotation={item.rotation}
                         draggable
                         cornerRadius={8}
-                        rotation={item.rotation}
                         onDragEnd={(e) => {
                             updateItem(item.id, {
                                 x: e.target.x(),
                                 y: e.target.y()
                             })
+                        }}
+                        onTransformEnd={(e) => {
+                           const node = e.target
+                           updateItem(item.id, {
+                               x: node.x(),
+                               y: node.y(),
+                               rotation: node.rotation(),
+                               scaleX: node.scaleX(),
+                               scaleY: node.scaleY(),
+                           })
                         }}
                         onClick={() => setSelectedItemId(item.id)}
                         stroke={selectedItemId === item.id ? 'blue' : undefined}
@@ -179,6 +225,16 @@ export const MainCanvas = () => {
                     />
                 )
            })}
+           <Transformer 
+             ref={transformerRef} 
+             boundBoxFunc={(oldBox, newBox) => {
+               // Limit minimum size to 5px
+               if (newBox.width < 5 || newBox.height < 5) {
+                 return oldBox
+               }
+               return newBox
+             }}
+           />
         </Layer>
       </Stage>
     </div>

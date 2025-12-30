@@ -10,6 +10,8 @@ export interface CanvasItem {
   height: number
   fill: string
   rotation: number
+  scaleX?: number
+  scaleY?: number
   src?: string
   name?: string
   price?: string
