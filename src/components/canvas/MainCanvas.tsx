@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Stage, Layer, Rect } from 'react-konva'
 import { useSceneStore } from '../../store/sceneStore'
 import { useCanvasStore } from '../../store/canvasStore'
+import { useUiStore } from '../../store/uiStore'
 import { URLImage } from './URLImage'
 
 export const MainCanvas = () => {
@@ -9,6 +10,7 @@ export const MainCanvas = () => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const { scale, position, setPosition, setScale } = useCanvasStore()
   const { items, addItem, updateItem } = useSceneStore()
+  const { selectedItemId, setSelectedItemId } = useUiStore()
   const stageRef = useRef<any>(null)
 
   useEffect(() => {
@@ -38,6 +40,10 @@ export const MainCanvas = () => {
       if (pointerPosition) {
         if (type === 'image') {
           const src = e.dataTransfer.getData('src')
+          const name = e.dataTransfer.getData('name')
+          const price = e.dataTransfer.getData('price')
+          const siteUrl = e.dataTransfer.getData('siteUrl')
+
           if (src) {
              addItem({
                 type: 'image',
@@ -45,11 +51,15 @@ export const MainCanvas = () => {
                 y: pointerPosition.y,
                 width: 200,
                 height: 200,
-                fill: 'transparent', // Image doesn't need fill usually
+                fill: 'transparent',
                 rotation: 0,
-                src: src
+                src: src,
+                name: name,
+                price: price,
+                siteUrl: siteUrl
              })
           }
+
         } else {
             addItem({
                 type: type as 'rect' | 'circle',
@@ -68,7 +78,7 @@ export const MainCanvas = () => {
   return (
     <div 
         ref={containerRef} 
-        className="w-full h-full bg-slate-50 overflow-hidden"
+        className="w-full h-full bg-white overflow-hidden"
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
     >
@@ -81,6 +91,12 @@ export const MainCanvas = () => {
         scaleY={scale}
         x={position.x}
         y={position.y}
+        onMouseDown={(e) => {
+          // Deselect if clicked on empty stage
+          if (e.target === e.target.getStage()) {
+            setSelectedItemId(null)
+          }
+        }}
         onDragEnd={(e) => {
           // Only update position if the stage itself was dragged
           if (e.target === e.target.getStage()) {
@@ -133,6 +149,10 @@ export const MainCanvas = () => {
                             height={item.height}
                             draggable
                             rotation={item.rotation}
+                            isSelected={selectedItemId === item.id}
+                            onClick={() => {
+                                setSelectedItemId(item.id)
+                            }}
                             onDragEnd={(e) => {
                                 updateItem(item.id, {
                                     x: e.target.x(),
@@ -159,6 +179,9 @@ export const MainCanvas = () => {
                                 y: e.target.y()
                             })
                         }}
+                        onClick={() => setSelectedItemId(item.id)}
+                        stroke={selectedItemId === item.id ? 'blue' : undefined}
+                        strokeWidth={selectedItemId === item.id ? 2 : 0}
                     />
                 )
            })}

@@ -10,10 +10,12 @@ interface URLImageProps {
   height: number;
   draggable: boolean;
   rotation: number;
+  isSelected?: boolean;
+  onClick?: () => void;
   onDragEnd: (e: any) => void;
 }
 
-export const URLImage: React.FC<URLImageProps> = ({ src, x, y, width, height, draggable, rotation, onDragEnd }) => {
+export const URLImage: React.FC<URLImageProps> = ({ src, x, y, width, height, draggable, rotation, onDragEnd, isSelected, onClick }) => {
   const [img] = useImage(src);
   return (
     <Image
@@ -25,6 +27,11 @@ export const URLImage: React.FC<URLImageProps> = ({ src, x, y, width, height, dr
       draggable={draggable}
       rotation={rotation}
       onDragEnd={onDragEnd}
+      onClick={onClick}
+      shadowColor="black"
+      shadowBlur={10}
+      shadowOpacity={0.5}
+      shadowEnabled={isSelected}
     />
   );
 };

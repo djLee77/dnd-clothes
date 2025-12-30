@@ -11,6 +11,9 @@ export interface CanvasItem {
   fill: string
   rotation: number
   src?: string
+  name?: string
+  price?: string
+  siteUrl?: string
 }
 
 interface SceneState {

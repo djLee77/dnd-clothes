@@ -3,6 +3,7 @@ import { Toolbar } from '../ui/Toolbar'
 import { Sidebar } from '../ui/Sidebar'
 import { useUiStore } from '../../store/uiStore'
 import { PanelRightOpen } from 'lucide-react'
+import { Navbar } from '../ui/Navbar'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -12,7 +13,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { isSidebarOpen, toggleSidebar } = useUiStore()
 
   return (
-    <div className="w-screen h-screen flex overflow-hidden bg-gray-50">
+    <div className="w-screen h-screen flex overflow-hidden bg-white transition-colors duration-300">
+      <Navbar />
       {/* Main Content Area */}
       <div className="flex-1 relative flex flex-col overflow-hidden">
         {/* Top Header Placeholder (optional) */}
