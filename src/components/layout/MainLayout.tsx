@@ -14,7 +14,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { isSidebarOpen, toggleSidebar } = useUiStore()
 
   return (
-    <div className="w-screen h-screen flex overflow-hidden bg-white transition-colors duration-300">
+    <div className="w-screen h-screen flex overflow-hidden bg-[#f8f9fc] transition-colors duration-300 relative">
+      {/* Fun Background Elements (Subtle) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-gray-400/10 rounded-full blur-[80px] animate-float-slow"></div>
+          <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-black/5 rounded-full blur-[80px] animate-float-reverse"></div>
+          <div className="absolute top-[30%] right-[10%] w-[20%] h-[20%] bg-gray-600/5 rounded-full blur-[60px] animate-pulse"></div>
+      </div>
+
       <Navbar />
       {/* Main Content Area */}
       <div className="flex-1 relative flex flex-col overflow-hidden pt-16">

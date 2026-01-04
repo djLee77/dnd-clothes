@@ -17,11 +17,6 @@ export const BottomToolbar = () => {
         try {
             setIsProcessing(true)
             const imageSrc = selectedItem.src
-
-            // Convert data URL or remote URL to Blob if necessary, 
-            // but removeBackground handles URLs heavily.
-            // Note: If using public URL, CORS might be an issue if not configured.
-            // Since we are using dataURLs (base64) mostly from upload, it should be fine.
             
             const blob = await removeBackground(imageSrc)
             const newUrl = URL.createObjectURL(blob)
@@ -38,16 +33,16 @@ export const BottomToolbar = () => {
     if (!selectedItemId || !selectedItem) return null
 
     return (
-        <div className="flex items-center gap-2 px-2 py-2 bg-white/80 backdrop-blur-xl rounded-full shadow-2xl border border-white/50 ring-1 ring-black/5 animate-slide-up origin-bottom">
+        <div className="flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 animate-slide-up origin-bottom">
             {/* Selection Info (Optional) */}
-            <div className="flex items-center gap-2 px-3 border-r border-gray-200/50">
-                <span className="text-xs font-semibold text-gray-500">Selected</span>
-                <span className="text-xs font-bold text-primary truncate max-w-[100px]">{selectedItem.name || 'Untitled'}</span>
+            <div className="flex items-center gap-3 px-3 border-r border-gray-200">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Selected</span>
+                <span className="text-sm font-bold text-gray-800 truncate max-w-[120px]">{selectedItem.name || 'Untitled'}</span>
                 <button 
                     onClick={() => setSelectedItemId(null)}
-                    className="p-0.5 hover:bg-black/5 rounded-full"
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                    <X size={12} className="text-gray-400" />
+                    <X size={14} className="text-gray-400 hover:text-gray-600" />
                 </button>
             </div>
 
@@ -58,24 +53,30 @@ export const BottomToolbar = () => {
                         onClick={handleRemoveBackground}
                         disabled={isProcessing}
                         className={`
-                            flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all
+                            relative overflow-hidden flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all group
                             ${isProcessing 
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                : 'bg-primary text-primary-foreground hover:shadow-lg hover:scale-105 active:scale-95'
+                                : 'text-white hover:shadow-lg hover:scale-105 active:scale-95'
                             }
                         `}
                     >
-                        {isProcessing ? (
-                            <>
-                                <Loader2 size={16} className="animate-spin" />
-                                <span>Processing...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Wand2 size={16} />
-                                <span>누끼 따기</span>
-                            </>
+                        {!isProcessing && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-brand-orange to-brand-green group-hover:opacity-90 transition-opacity"></div>
                         )}
+                        
+                        <div className="relative z-10 flex items-center gap-2">
+                            {isProcessing ? (
+                                <>
+                                    <Loader2 size={16} className="animate-spin" />
+                                    <span>Processing...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Wand2 size={16} />
+                                    <span>누끼 따기</span>
+                                </>
+                            )}
+                        </div>
                     </button>
                 )}
             </div>
