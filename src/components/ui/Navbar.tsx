@@ -1,8 +1,10 @@
-import { LayoutGrid, UserCircle, Shirt } from 'lucide-react'
+import { LayoutGrid, UserCircle, Shirt, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../../store/authStore'
 
 export const Navbar = () => {
   const navigate = useNavigate()
+  const { user, logout, isAuthenticated } = useAuthStore()
   return (
     <nav className="fixed top-0 left-0 w-full h-16 z-50 animate-slide-down border-b border-white/20 bg-white/70 backdrop-blur-md">
       <div className="w-full h-full flex items-center justify-between px-6">
@@ -21,13 +23,29 @@ export const Navbar = () => {
                 <LayoutGrid size={18} className="group-hover:text-black transition-colors" />
                 <span>대쉬보드</span>
             </button>
-            <button 
-                onClick={() => navigate('/login')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group"
-            >
-                <UserCircle size={18} className="group-hover:text-black transition-colors" />
-                <span>마이페이지</span>
-            </button>
+            {isAuthenticated ? (
+                <>
+                    <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group">
+                        <UserCircle size={18} className="group-hover:text-black transition-colors" />
+                        <span>{user?.username || '마이페이지'}</span>
+                    </button>
+                    <button 
+                        onClick={logout}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-95 group"
+                    >
+                        <LogOut size={18} />
+                        <span>로그아웃</span>
+                    </button>
+                </>
+            ) : (
+                <button 
+                    onClick={() => navigate('/login')}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group"
+                >
+                    <UserCircle size={18} className="group-hover:text-black transition-colors" />
+                    <span>로그인</span>
+                </button>
+            )}
         </div>
 
       </div>
