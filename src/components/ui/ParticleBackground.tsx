@@ -9,7 +9,13 @@ interface Particle {
   color: string
 }
 
-export const ParticleBackground = () => {
+interface ParticleBackgroundProps {
+  attractionRadius?: number
+}
+
+export const ParticleBackground: React.FC<ParticleBackgroundProps> = ({ 
+  attractionRadius = 350 
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const mouseRef = useRef({ x: 0, y: 0 })
 
@@ -58,7 +64,6 @@ export const ParticleBackground = () => {
         const dx = mouseRef.current.x - p.x
         const dy = mouseRef.current.y - p.y
         const distance = Math.sqrt(dx * dx + dy * dy)
-        const maxDistance = 350 // Attraction range
         const minDistance = 80 // Dead zone - particles won't go closer than this
         
         if (distance < minDistance && distance > 1) {
@@ -74,24 +79,24 @@ export const ParticleBackground = () => {
             // Reduced friction near center for more "bounce"
             p.vx *= 0.95 // Increased from 0.9
             p.vy *= 0.95 // Increased from 0.9
-        } else if (distance < maxDistance && distance >= minDistance) {
-            // Gentle attraction in the outer zone
-            const force = (maxDistance - distance) / maxDistance
-            const attractionStrength = 3.0 // Increased from 1.5
+        } else if (distance < attractionRadius && distance >= minDistance) {
+            // Gentle attraction
+            const force = (attractionRadius - distance) / attractionRadius
+            const attractionStrength = 3.0 
             const normalizedDx = dx / distance
             const normalizedDy = dy / distance
             
             // Apply attraction
-            p.vx += normalizedDx * force * attractionStrength * 0.02 // Increased from 0.015
-            p.vy += normalizedDy * force * attractionStrength * 0.02 // Increased from 0.015
+            p.vx += normalizedDx * force * attractionStrength * 0.02
+            p.vy += normalizedDy * force * attractionStrength * 0.02
             
             // Natural friction
-            p.vx *= 0.98 // Increased from 0.96
-            p.vy *= 0.98 // Increased from 0.96
+            p.vx *= 0.98
+            p.vy *= 0.98
         } else {
-            // Very light damping when not affected by mouse
-            p.vx *= 0.99 // Increased from 0.98
-            p.vy *= 0.99 // Increased from 0.98
+            // Very light damping
+            p.vx *= 0.99
+            p.vy *= 0.99
         }
 
         // Boundary wrap

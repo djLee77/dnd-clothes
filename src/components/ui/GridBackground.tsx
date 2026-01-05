@@ -1,6 +1,16 @@
 import { useEffect, useRef } from 'react'
 
-export const GridBackground = () => {
+interface GridBackgroundProps {
+  interactive?: boolean
+  distortionRadius?: number
+  distortionStrength?: number // Higher = more distortion
+}
+
+export const GridBackground: React.FC<GridBackgroundProps> = ({ 
+  interactive = true,
+  distortionRadius = 350,
+  distortionStrength = 0.5
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const mouseRef = useRef({ x: 0, y: 0 })
 
@@ -12,14 +22,17 @@ export const GridBackground = () => {
 
     let animationFrameId: number
     const gridSize = 50 // Grid cell size in pixels
-    const distortionRadius = 350 // Increased radius for larger warped area
+    const padding = distortionRadius * 0.4 // Extra drawing area to fill edge gaps during distortion
 
     const resize = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
+      if (!interactive) drawGrid() // Initial draw for static grid
     }
 
     const getDistortedPoint = (x: number, y: number) => {
+      if (!interactive) return { x, y }
+      
       const dx = mouseRef.current.x - x
       const dy = mouseRef.current.y - y
       const distanceSq = dx * dx + dy * dy
@@ -30,7 +43,7 @@ export const GridBackground = () => {
         const sigma = distortionRadius * 0.4
         // Calculate factor using exp(-d^2 / (2 * sigma^2))
         // multiplier ensures we don't move points past the mouse (avoiding knots)
-        const factor = Math.exp(-distanceSq / (2 * sigma * sigma)) * 0.5
+        const factor = Math.exp(-distanceSq / (2 * sigma * sigma)) * distortionStrength
         
         return {
           x: x + dx * factor,
@@ -48,15 +61,14 @@ export const GridBackground = () => {
       ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)'
       ctx.lineWidth = 1
 
-      // Draw vertical lines
-      for (let x = 0; x <= canvas.width; x += gridSize) {
+      // Draw vertical lines - starting from -padding to cover edges
+      for (let x = -Math.ceil(padding / gridSize) * gridSize; x <= canvas.width + padding; x += gridSize) {
         ctx.beginPath()
         
-        // Reduced sampling density to prevent line tangling (was 5, now 10)
-        for (let y = 0; y <= canvas.height; y += 10) {
+        for (let y = -padding; y <= canvas.height + padding; y += 10) {
           const distorted = getDistortedPoint(x, y)
           
-          if (y === 0) {
+          if (y <= -padding) {
             ctx.moveTo(distorted.x, distorted.y)
           } else {
             ctx.lineTo(distorted.x, distorted.y)
@@ -66,15 +78,14 @@ export const GridBackground = () => {
         ctx.stroke()
       }
 
-      // Draw horizontal lines
-      for (let y = 0; y <= canvas.height; y += gridSize) {
+      // Draw horizontal lines - starting from -padding to cover edges
+      for (let y = -Math.ceil(padding / gridSize) * gridSize; y <= canvas.height + padding; y += gridSize) {
         ctx.beginPath()
         
-        // Reduced sampling density to prevent line tangling (was 5, now 10)
-        for (let x = 0; x <= canvas.width; x += 10) {
+        for (let x = -padding; x <= canvas.width + padding; x += 10) {
           const distorted = getDistortedPoint(x, y)
           
-          if (x === 0) {
+          if (x <= -padding) {
             ctx.moveTo(distorted.x, distorted.y)
           } else {
             ctx.lineTo(distorted.x, distorted.y)
@@ -89,7 +100,9 @@ export const GridBackground = () => {
 
     const animate = () => {
       drawGrid()
-      animationFrameId = requestAnimationFrame(animate)
+      if (interactive) {
+        animationFrameId = requestAnimationFrame(animate)
+      }
     }
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -97,15 +110,19 @@ export const GridBackground = () => {
     }
 
     window.addEventListener('resize', resize)
-    window.addEventListener('mousemove', handleMouseMove)
+    if (interactive) {
+      window.addEventListener('mousemove', handleMouseMove)
+    }
 
     resize()
     animate()
 
     return () => {
       window.removeEventListener('resize', resize)
-      window.removeEventListener('mousemove', handleMouseMove)
-      cancelAnimationFrame(animationFrameId)
+      if (interactive) {
+        window.removeEventListener('mousemove', handleMouseMove)
+        cancelAnimationFrame(animationFrameId)
+      }
     }
   }, [])
 

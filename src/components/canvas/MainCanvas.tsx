@@ -3,6 +3,7 @@ import { Stage, Layer, Rect, Transformer } from 'react-konva'
 import { useSceneStore } from '../../store/sceneStore'
 import { useCanvasStore } from '../../store/canvasStore'
 import { useUiStore } from '../../store/uiStore'
+import { GridBackground } from '../ui/GridBackground'
 import { URLImage } from './URLImage'
 
 export const MainCanvas = () => {
@@ -100,10 +101,11 @@ export const MainCanvas = () => {
   return (
     <div 
         ref={containerRef} 
-        className="w-full h-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px] overflow-hidden relative"
+        className="w-full h-full bg-white overflow-hidden relative"
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
     >
+      <GridBackground interactive={false} />
       {/* Lighting Vignette */}
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(255,255,255,0.8)_100%)] z-0" />
       <Stage

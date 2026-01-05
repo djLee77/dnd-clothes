@@ -25,8 +25,8 @@ export const LoginPage = () => {
         {/* Animated Background Elements - Antigravity inspired fun shapes */}
         {/* Animated Background Elements - Antigravity inspired fun shapes */}
         <div className={`absolute inset-0 transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-            <GridBackground />
-            <ParticleBackground />
+            <GridBackground interactive={true} distortionRadius={1000} distortionStrength={0.125} />
+            <ParticleBackground attractionRadius={350} />
         </div>
 
         {/* Content Container */}
