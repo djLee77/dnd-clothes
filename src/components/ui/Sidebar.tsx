@@ -1,48 +1,40 @@
-import React from 'react'
-import { X, Settings, Layers, Upload, Plus, Trash2, ChevronDown } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { X, Settings, Layers, Upload, Plus, Trash2, ChevronDown, Save, Bookmark, FolderOpen } from 'lucide-react'
 import { useUiStore } from '../../store/uiStore'
-import { useState, useRef } from 'react'
-import { v4 as uuidv4 } from 'uuid'
 import { UploadModal } from './UploadModal'
 import { useSceneStore } from '../../store/sceneStore'
+import { useScrapStore } from '../../store/scrapStore'
+import { useAssetStore } from '../../store/assetStore'
 
-interface Category {
-  id: string
-  name: string
-}
-
-interface Asset {
-  id: string
-  src: string
-  categoryId: string
-  name: string
-  price: string
-  siteUrl: string
-}
+// Types moved to assetStore.ts
 
 export const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, selectedItemId } = useUiStore()
   const { items, updateItem } = useSceneStore()
+  const { scraps, fetchScraps, saveCurrentScrap, loadScrap, deleteScrap, isLoading } = useScrapStore()
+  const { categories, assets, addCategory: storeAddCategory, deleteCategory: storeDeleteCategory, addAsset, deleteAsset: storeDeleteAsset, fetchData: fetchAssetData } = useAssetStore()
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [pendingFile, setPendingFile] = useState<{ file: File; categoryId: string } | null>(null)
+  const [pendingFile, setPendingFile] = useState<{ file: File; categoryId: number } | null>(null)
   
-  // Default categories
-  const [categories, setCategories] = useState<Category[]>([
-    { id: 'cat-tops', name: '상의' },
-    { id: 'cat-bottoms', name: '하의' }
-  ])
-  const [assets, setAssets] = useState<Asset[]>([])
   const [newCategoryName, setNewCategoryName] = useState('')
-  const [collapsedCategories, setCollapsedCategories] = useState<string[]>([])
+  const [newScrapName, setNewScrapName] = useState('')
+  const [collapsedCategories, setCollapsedCategories] = useState<string[]>(['cat-scraps'])
   
   // Refs for file inputs mapped by category ID
-  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
+  const fileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({})
+
+  useEffect(() => {
+    if (isSidebarOpen) {
+      fetchScraps()
+      fetchAssetData()
+    }
+  }, [isSidebarOpen, fetchScraps, fetchAssetData])
 
   const selectedItem = items.find(i => i.id === selectedItemId)
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, categoryId: string) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, categoryId: number) => {
     const file = e.target.files?.[0]
     if (file) {
       setPendingFile({ file, categoryId })
@@ -55,45 +47,70 @@ export const Sidebar = () => {
   const handleModalConfirm = (data: { name: string; price: string; siteUrl: string }) => {
     if (pendingFile) {
       const reader = new FileReader()
-      reader.onloadend = () => {
-        setAssets((prev) => [
-          ...prev, 
-          { 
-            id: uuidv4(), 
-            src: reader.result as string, 
+      reader.onloadend = async () => {
+        try {
+          await addAsset({
+            src: reader.result as string,
             categoryId: pendingFile.categoryId,
             ...data
-          }
-        ])
+          })
+        } catch (error) {
+          alert('에셋 저장에 실패했습니다.')
+        }
       }
       reader.readAsDataURL(pendingFile.file)
       setPendingFile(null)
     }
   }
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (newCategoryName.trim()) {
-      setCategories([...categories, { id: uuidv4(), name: newCategoryName.trim() }])
-      setNewCategoryName('')
+      try {
+        await storeAddCategory(newCategoryName.trim())
+        setNewCategoryName('')
+      } catch (error) {
+        alert('카테고리 추가에 실패했습니다.')
+      }
     }
   }
 
-  const deleteCategory = (id: string) => {
-    setCategories(categories.filter(c => c.id !== id))
-    // Optional: Delete assets in this category or move them to 'Uncategorized'
-    // For now we just keep them but they won't show up. 
-    // Ideally we should filter them out too:
-    setAssets(assets.filter(a => a.categoryId !== id))
+  const deleteCategory = async (id: number) => {
+    if (confirm('카테고리와 포함된 모든 에셋이 삭제됩니다. 계속하시겠습니까?')) {
+      try {
+        await storeDeleteCategory(id)
+      } catch (error) {
+        alert('카테고리 삭제에 실패했습니다.')
+      }
+    }
   }
 
-  const toggleCategoryCollapse = (id: string) => {
+  const toggleCategoryCollapse = (id: string | number) => {
+    const idStr = id.toString()
     setCollapsedCategories(prev => 
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+      prev.includes(idStr) ? prev.filter(c => c !== idStr) : [...prev, idStr]
     )
   }
 
-  const deleteAsset = (assetId: string) => {
-      setAssets(assets.filter(a => a.id !== assetId))
+  const deleteAsset = async (assetId: number) => {
+    try {
+      await storeDeleteAsset(assetId)
+    } catch (error) {
+      alert('에셋 삭제에 실패했습니다.')
+    }
+  }
+
+  const handleSaveScrap = async () => {
+    if (!newScrapName.trim()) {
+        alert('스크랩 이름을 입력해주세요.')
+        return
+    }
+    try {
+        await saveCurrentScrap(newScrapName)
+        setNewScrapName('')
+        alert('스크랩이 저장되었습니다.')
+    } catch (error) {
+        alert('저장에 실패했습니다.')
+    }
   }
 
   if (!isSidebarOpen) return null
@@ -161,6 +178,76 @@ export const Sidebar = () => {
             <p className="text-sm font-medium">아이템을 선택하세요</p>
           </div>
         )}
+
+        {/* Scraps Section */}
+        <div className="mt-8 pt-6 border-t border-gray-100">
+            <h3 className="font-extrabold text-gray-300 text-xs tracking-widest uppercase mb-6 px-2 flex items-center gap-2">
+                <Bookmark size={14} /> Saved Scraps
+            </h3>
+            
+            <div className="space-y-4">
+                {/* Save Current Board Section */}
+                <div className="flex items-center gap-2 mb-6 group focus-within:ring-2 focus-within:ring-brand-orange/10 rounded-full transition-shadow">
+                    <input
+                        type="text"
+                        value={newScrapName}
+                        onChange={(e) => setNewScrapName(e.target.value)}
+                        placeholder="스크랩 이름..."
+                        className="flex-1 px-5 py-3 bg-white border-none rounded-full text-sm font-medium focus:outline-none placeholder:text-gray-300"
+                        onKeyDown={(e) => e.key === 'Enter' && handleSaveScrap()}
+                    />
+                    <button 
+                        onClick={handleSaveScrap}
+                        disabled={isLoading}
+                        className="p-3 bg-gray-900 text-white rounded-full hover:bg-black shadow-lg hover:shadow-gray-500/30 transition-all active:scale-95 disabled:bg-gray-400"
+                        title="보드 저장하기"
+                    >
+                        <Save size={16} strokeWidth={2.5} />
+                    </button>
+                </div>
+
+                {/* Scraps List */}
+                <div className="bg-white/50 border border-white rounded-[1.8rem] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
+                    <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/60 transition-colors" onClick={() => toggleCategoryCollapse('cat-scraps')}>
+                        <div className="flex items-center gap-3 font-bold text-gray-700 select-none">
+                            <div className={`w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-black transition-all duration-300 ${collapsedCategories.includes('cat-scraps') ? '-rotate-90' : 'rotate-0'}`}>
+                                <ChevronDown size={16} />
+                            </div>
+                            저장된 보드 목록
+                        </div>
+                    </div>
+
+                    {!collapsedCategories.includes('cat-scraps') && (
+                        <div className="p-4 pt-2 space-y-2">
+                            {scraps.map(scrap => (
+                                <div key={scrap.id} className="flex items-center justify-between p-3 bg-white rounded-2xl group/scrap hover:shadow-md transition-all">
+                                    <div className="flex items-center gap-3 flex-1 min-w-0" onClick={() => loadScrap(scrap.id)}>
+                                        <div className="p-2 bg-gray-50 rounded-xl text-gray-400 group-hover/scrap:text-black group-hover/scrap:bg-gray-100 transition-colors">
+                                            <FolderOpen size={16} />
+                                        </div>
+                                        <div className="truncate">
+                                            <p className="text-sm font-bold text-gray-700 truncate">{scrap.name}</p>
+                                            <p className="text-[10px] text-gray-400 font-medium">{new Date(scrap.created_at).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => deleteScrap(scrap.id)}
+                                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover/scrap:opacity-100"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                            {scraps.length === 0 && (
+                                <div className="text-center py-6">
+                                    <p className="text-sm text-gray-300 font-medium">저장된 보드가 없습니다.</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
         
         {/* Draggable Assets */}
         <div className="mt-8 pt-6 border-t border-gray-100">
@@ -193,7 +280,7 @@ export const Sidebar = () => {
                         {/* Category Header */}
                             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/60 transition-colors" onClick={() => toggleCategoryCollapse(category.id)}>
                             <div className="flex items-center gap-3 font-bold text-gray-700 select-none">
-                                <div className={`w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-black transition-all duration-300 ${collapsedCategories.includes(category.id) ? '-rotate-90' : 'rotate-0'}`}>
+                                <div className={`w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400 group-hover:text-black transition-all duration-300 ${collapsedCategories.includes(category.id.toString()) ? '-rotate-90' : 'rotate-0'}`}>
                                     <ChevronDown size={16} />
                                 </div>
                                 {category.name}
@@ -224,7 +311,7 @@ export const Sidebar = () => {
                         </div>
 
                         {/* Category Assets */}
-                        {!collapsedCategories.includes(category.id) && (
+                        {!collapsedCategories.includes(category.id.toString()) && (
                             <div className="p-4 pt-0 grid grid-cols-2 gap-3">
                                 {assets.filter(a => a.categoryId === category.id).map((asset) => (
                                     <div

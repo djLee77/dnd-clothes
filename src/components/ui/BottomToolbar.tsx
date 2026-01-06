@@ -19,9 +19,14 @@ export const BottomToolbar = () => {
             const imageSrc = selectedItem.src
             
             const blob = await removeBackground(imageSrc)
-            const newUrl = URL.createObjectURL(blob)
-
-            updateItem(selectedItem.id, { src: newUrl })
+            
+            // Convert to base64 to ensure persistence when saving/loading scraps
+            const reader = new FileReader()
+            reader.readAsDataURL(blob)
+            reader.onloadend = () => {
+                const base64data = reader.result as string
+                updateItem(selectedItem.id, { src: base64data })
+            }
         } catch (error) {
             console.error('Failed to remove background:', error)
             alert('배경 제거에 실패했습니다.')

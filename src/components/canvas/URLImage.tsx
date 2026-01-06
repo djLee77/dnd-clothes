@@ -23,7 +23,7 @@ export const URLImage: React.FC<URLImageProps> = ({
   id, src, x, y, width, height, scaleX, scaleY, 
   draggable, rotation, onDragEnd, onTransformEnd, isSelected, onClick 
 }) => {
-  const [img] = useImage(src);
+  const [img] = useImage(src || '');
   return (
     <Image
       id={id} // Helper for Transformer to find
