@@ -23,6 +23,10 @@ interface SceneState {
   addItem: (item: Omit<CanvasItem, 'id'>) => void
   updateItem: (id: string, attrs: Partial<CanvasItem>) => void
   removeItem: (id: string) => void
+  bringToFront: (id: string) => void
+  sendToBack: (id: string) => void
+  moveForward: (id: string) => void
+  moveBackward: (id: string) => void
 }
 
 export const useSceneStore = create<SceneState>((set) => ({
@@ -41,4 +45,34 @@ export const useSceneStore = create<SceneState>((set) => ({
     set((state) => ({
       items: state.items.filter((item) => item.id !== id),
     })),
+  bringToFront: (id) =>
+    set((state) => {
+      const item = state.items.find((i) => i.id === id)
+      if (!item) return state
+      const otherItems = state.items.filter((i) => i.id !== id)
+      return { items: [...otherItems, item] }
+    }),
+  sendToBack: (id) =>
+    set((state) => {
+      const item = state.items.find((i) => i.id === id)
+      if (!item) return state
+      const otherItems = state.items.filter((i) => i.id !== id)
+      return { items: [item, ...otherItems] }
+    }),
+  moveForward: (id) =>
+    set((state) => {
+      const index = state.items.findIndex((i) => i.id === id)
+      if (index === -1 || index === state.items.length - 1) return state
+      const newItems = [...state.items]
+      ;[newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]]
+      return { items: newItems }
+    }),
+  moveBackward: (id) =>
+    set((state) => {
+      const index = state.items.findIndex((i) => i.id === id)
+      if (index === -1 || index === 0) return state
+      const newItems = [...state.items]
+      ;[newItems[index], newItems[index - 1]] = [newItems[index - 1], newItems[index]]
+      return { items: newItems }
+    }),
 }))

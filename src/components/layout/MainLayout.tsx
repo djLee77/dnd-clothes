@@ -5,6 +5,7 @@ import { Sidebar } from '../ui/Sidebar'
 import { useUiStore } from '../../store/uiStore'
 import { PanelRightOpen } from 'lucide-react'
 import { Navbar } from '../ui/Navbar'
+import { BottomAssetBar } from '../ui/BottomAssetBar'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -50,6 +51,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </button>
         )}
       </div>
+
+      {/* Bottom Asset Bar (Conditionally rendered inside) */}
+      <BottomAssetBar />
 
       {/* Right Sidebar */}
       <Sidebar />

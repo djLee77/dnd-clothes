@@ -1,15 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { X, Settings, Layers, Upload, Plus, Trash2, ChevronDown, Save, Bookmark, FolderOpen } from 'lucide-react'
+import { X, Settings, Layers, Upload, Plus, Trash2, ChevronDown, Save, Bookmark, FolderOpen, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
 import { useUiStore } from '../../store/uiStore'
 import { UploadModal } from './UploadModal'
 import { useSceneStore } from '../../store/sceneStore'
 import { useScrapStore } from '../../store/scrapStore'
 import { useAssetStore } from '../../store/assetStore'
 
-// Types moved to assetStore.ts
-
 export const Sidebar = () => {
-  const { isSidebarOpen, toggleSidebar, selectedItemId } = useUiStore()
+  const { isSidebarOpen, toggleSidebar, isExpanded, toggleExpanded, assetLocation, setAssetLocation, transitionTo, setTransitionTo, selectedItemId } = useUiStore()
   const { items, updateItem } = useSceneStore()
   const { scraps, fetchScraps, saveCurrentScrap, loadScrap, deleteScrap, isLoading } = useScrapStore()
   const { categories, assets, addCategory: storeAddCategory, deleteCategory: storeDeleteCategory, addAsset, deleteAsset: storeDeleteAsset, fetchData: fetchAssetData } = useAssetStore()
@@ -99,6 +97,16 @@ export const Sidebar = () => {
     }
   }
 
+  const handleMoveToBottom = () => {
+    setTransitionTo('bottom')
+    // Start bottom bar immediately
+    setAssetLocation('bottom')
+    
+    setTimeout(() => {
+      setTransitionTo(null)
+    }, 550) // Match slide-out-right duration (0.5s)
+  }
+
   const handleSaveScrap = async () => {
     if (!newScrapName.trim()) {
         alert('스크랩 이름을 입력해주세요.')
@@ -116,7 +124,34 @@ export const Sidebar = () => {
   if (!isSidebarOpen) return null
 
   return (
-    <div className="w-80 h-[calc(100vh-6rem)] mt-20 mr-4 mb-4 bg-white/70 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col pointer-events-auto border border-white/60 transition-all duration-300">
+    <div 
+      className={`relative h-[calc(100vh-6rem)] mt-20 mr-4 mb-4 bg-white/70 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col pointer-events-auto border border-white/60 transition-all duration-500 ease-in-out animate-dramatic-slide-in-right ${isExpanded ? 'w-[45rem]' : 'w-80'}`}
+    >
+      {/* Expand/Collapse Toggle Button */}
+      <button
+        onClick={toggleExpanded}
+        className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-12 bg-white/90 backdrop-blur-md border border-white/80 rounded-xl shadow-lg flex items-center justify-center text-gray-400 hover:text-black hover:scale-110 transition-all z-50 group"
+        title={isExpanded ? "축소하기" : "펼치기"}
+      >
+        {isExpanded ? (
+          <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
+        ) : (
+          <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+        )}
+      </button>
+
+      {/* Move to Bottom Toggle Button (Floating at screen bottom center) */}
+      {assetLocation === 'sidebar' && isSidebarOpen && (
+        <button
+          onClick={handleMoveToBottom}
+          className="fixed bottom-10 left-1/2 -translate-x-1/2 w-14 h-10 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/80 rounded-2xl flex flex-col items-center justify-center text-gray-500 hover:text-black hover:scale-110 hover:shadow-[0_12px_40px_rgb(0,0,0,0.15)] transition-all z-[100] group"
+          title="하단 바 모드로 전환"
+        >
+          <ChevronUp size={24} className="group-hover:-translate-y-1 transition-transform" />
+          <span className="text-[8px] font-black uppercase tracking-tighter -mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Asset Bar</span>
+        </button>
+      )}
+
       <div className="h-20 flex items-center justify-between px-8 border-b border-white/20">
         <h2 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-600 text-2xl tracking-tighter">Properties</h2>
         <button
@@ -129,7 +164,7 @@ export const Sidebar = () => {
 
       <div className="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
         {selectedItem ? (
-           <div className="space-y-5 animate-slide-up" key={selectedItem.id}>
+           <div className={`space-y-5 animate-slide-up ${isExpanded ? 'grid grid-cols-2 gap-x-6 gap-y-2 content-start' : ''}`} key={selectedItem.id}>
               <div className="opacity-0 animate-fade-in space-y-2" style={{ animationDelay: '0ms', animationFillMode: 'forwards' }}>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">이름</label>
                   <input 
@@ -150,7 +185,7 @@ export const Sidebar = () => {
                   placeholder="₩ 0"
                 />
               </div>
-              <div className="opacity-0 animate-fade-in space-y-2" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
+              <div className={`opacity-0 animate-fade-in space-y-2 ${isExpanded ? 'col-span-2' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">구매 링크</label>
                   <input 
                   type="text" 
@@ -165,12 +200,14 @@ export const Sidebar = () => {
                     href={selectedItem.siteUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="block w-full text-center py-3.5 bg-gradient-to-r from-gray-800 to-black text-white font-bold rounded-xl hover:shadow-lg hover:shadow-gray-500/25 hover:-translate-y-0.5 transition-all duration-300 animate-pop text-sm"
+                    className={`block w-full text-center py-3.5 bg-gradient-to-r from-gray-800 to-black text-white font-bold rounded-xl hover:shadow-lg hover:shadow-gray-500/25 hover:-translate-y-0.5 transition-all duration-300 animate-pop text-sm ${isExpanded ? 'col-span-2 mt-4' : ''}`}
                     style={{ animationDelay: '300ms' }}
                   >
                     사이트 방문
                   </a>
               )}
+
+
            </div>
         ) : (
           <div className="h-40 flex flex-col items-center justify-center text-gray-300 space-y-3 border-2 border-dashed border-gray-200/50 rounded-3xl m-2">
@@ -218,28 +255,30 @@ export const Sidebar = () => {
                     </div>
 
                     {!collapsedCategories.includes('cat-scraps') && (
-                        <div className="p-4 pt-2 space-y-2">
+                        <div className="flex overflow-x-auto gap-3 pb-4 px-4 pt-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                             {scraps.map(scrap => (
-                                <div key={scrap.id} className="flex items-center justify-between p-3 bg-white rounded-2xl group/scrap hover:shadow-md transition-all">
-                                    <div className="flex items-center gap-3 flex-1 min-w-0" onClick={() => loadScrap(scrap.id)}>
-                                        <div className="p-2 bg-gray-50 rounded-xl text-gray-400 group-hover/scrap:text-black group-hover/scrap:bg-gray-100 transition-colors">
-                                            <FolderOpen size={16} />
+                                <div key={scrap.id} className="flex-shrink-0 w-40 flex flex-col p-3 bg-white rounded-2xl group/scrap hover:shadow-md transition-all snap-start border border-gray-50">
+                                    <div className="flex flex-col gap-3 flex-1 min-w-0" onClick={() => loadScrap(scrap.id)}>
+                                        <div className="p-3 bg-gray-50 rounded-xl text-gray-400 group-hover/scrap:text-black group-hover/scrap:bg-gray-100 transition-colors flex items-center justify-center">
+                                            <FolderOpen size={24} />
                                         </div>
-                                        <div className="truncate">
-                                            <p className="text-sm font-bold text-gray-700 truncate">{scrap.name}</p>
-                                            <p className="text-[10px] text-gray-400 font-medium">{new Date(scrap.created_at).toLocaleDateString()}</p>
+                                        <div className="text-center">
+                                            <p className="text-[11px] font-bold text-gray-700 truncate">{scrap.name}</p>
+                                            <p className="text-[9px] text-gray-400 font-medium">{new Date(scrap.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
-                                    <button 
-                                        onClick={() => deleteScrap(scrap.id)}
-                                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover/scrap:opacity-100"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                                    <div className="mt-2 pt-2 border-t border-gray-50 flex justify-end">
+                                        <button 
+                                            onClick={() => deleteScrap(scrap.id)}
+                                            className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                             {scraps.length === 0 && (
-                                <div className="text-center py-6">
+                                <div className="w-full text-center py-6">
                                     <p className="text-sm text-gray-300 font-medium">저장된 보드가 없습니다.</p>
                                 </div>
                             )}
@@ -249,12 +288,14 @@ export const Sidebar = () => {
             </div>
         </div>
         
-        {/* Draggable Assets */}
-        <div className="mt-8 pt-6 border-t border-gray-100">
-            <h3 className="font-extrabold text-gray-300 text-xs tracking-widest uppercase mb-6 px-2 flex items-center gap-2">
-                <Layers size={14} /> Assets
-            </h3>
-            <div className="space-y-4">
+        {(assetLocation === 'sidebar' || transitionTo === 'bottom') && (
+          <div className={`mt-8 pt-6 border-t border-gray-100 transition-all duration-500 ${transitionTo === 'bottom' ? 'animate-slide-out-right' : 'animate-dramatic-slide-in-right'}`}>
+              <div className="flex items-center justify-between mb-6 px-2">
+                <h3 className="font-extrabold text-gray-300 text-xs tracking-widest uppercase flex items-center gap-2">
+                    <Layers size={14} /> Assets
+                </h3>
+              </div>
+              <div className="space-y-4">
                 
                 {/* Add Category Section */}
                 <div className="flex items-center gap-2 mb-6 group focus-within:ring-2 focus-within:ring-brand-orange/10 rounded-full transition-shadow">
@@ -312,11 +353,11 @@ export const Sidebar = () => {
 
                         {/* Category Assets */}
                         {!collapsedCategories.includes(category.id.toString()) && (
-                            <div className="p-4 pt-0 grid grid-cols-2 gap-3">
+                            <div className="flex overflow-x-auto gap-3 pb-4 px-4 pt-0 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                 {assets.filter(a => a.categoryId === category.id).map((asset) => (
                                     <div
                                         key={asset.id}
-                                        className="relative group/asset p-3 bg-white rounded-2xl cursor-move shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                                        className="flex-shrink-0 w-32 relative group/asset p-3 bg-white rounded-2xl cursor-move shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 snap-start"
                                         draggable
                                         onDragStart={(e) => {
                                             e.dataTransfer.setData('type', 'image')
@@ -335,8 +376,8 @@ export const Sidebar = () => {
                                             />
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-xs font-bold text-gray-700 truncate">{asset.name || 'Untitled'}</p>
-                                            <p className="text-[10px] text-gray-400 font-medium tracking-tight mt-0.5">{asset.price}</p>
+                                            <p className="text-[11px] font-bold text-gray-700 truncate">{asset.name || 'Untitled'}</p>
+                                            <p className="text-[9px] text-gray-400 font-medium tracking-tight mt-0.5">{asset.price}</p>
                                         </div>
                                         <button
                                             onClick={(e) => {
@@ -345,12 +386,12 @@ export const Sidebar = () => {
                                             }}
                                             className="absolute top-2 right-2 p-1.5 bg-white shadow-md rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover/asset:opacity-100 transition-all scale-90 group-hover/asset:scale-100"
                                         >
-                                            <X size={12} />
+                                            <X size={10} />
                                         </button>
                                     </div>
                                 ))}
                                 {assets.filter(a => a.categoryId === category.id).length === 0 && (
-                                    <div className="col-span-2 text-center py-8 border-2 border-dashed border-gray-100 rounded-2xl group-hover:border-gray-200 transition-colors">
+                                    <div className="w-full text-center py-8 border-2 border-dashed border-gray-100 rounded-2xl group-hover:border-gray-200 transition-colors">
                                         <p className="text-xs text-gray-300 font-medium mb-1">비어있음</p>
                                         <p className="text-[10px] text-gray-300">이미지를 추가해보세요</p>
                                     </div>
@@ -362,7 +403,8 @@ export const Sidebar = () => {
 
 
             </div>
-        </div>
+          </div>
+        )}
       </div>
       
       <UploadModal 

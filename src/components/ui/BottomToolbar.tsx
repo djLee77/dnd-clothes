@@ -1,12 +1,12 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useUiStore } from '../../store/uiStore'
 import { useSceneStore } from '../../store/sceneStore'
-import { Wand2, Loader2, X } from 'lucide-react'
+import { Wand2, Loader2, X, BringToFront, SendToBack, MoveUp, MoveDown } from 'lucide-react'
 import { removeBackground } from '@imgly/background-removal'
 
 export const BottomToolbar = () => {
     const { selectedItemId, setSelectedItemId } = useUiStore()
-    const { items, updateItem } = useSceneStore()
+    const { items, updateItem, bringToFront, sendToBack, moveForward, moveBackward } = useSceneStore()
     const [isProcessing, setIsProcessing] = useState(false)
 
     const selectedItem = items.find(i => i.id === selectedItemId)
@@ -53,12 +53,43 @@ export const BottomToolbar = () => {
 
             {/* Actions */}
             <div className="flex items-center pl-1">
+                <div className="flex items-center gap-1 mr-3 pr-3 border-r border-gray-100">
+                    <button
+                        onClick={() => bringToFront(selectedItem.id)}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400 hover:text-black hover:scale-110 active:scale-90"
+                        title="맨 앞으로"
+                    >
+                        <BringToFront size={18} />
+                    </button>
+                    <button
+                        onClick={() => moveForward(selectedItem.id)}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400 hover:text-black hover:scale-110 active:scale-90"
+                        title="앞으로"
+                    >
+                        <MoveUp size={18} />
+                    </button>
+                    <button
+                        onClick={() => moveBackward(selectedItem.id)}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400 hover:text-black hover:scale-110 active:scale-90"
+                        title="뒤로"
+                    >
+                        <MoveDown size={18} />
+                    </button>
+                    <button
+                        onClick={() => sendToBack(selectedItem.id)}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400 hover:text-black hover:scale-110 active:scale-90"
+                        title="맨 뒤로"
+                    >
+                        <SendToBack size={18} />
+                    </button>
+                </div>
+
                 {selectedItem.type === 'image' && (
                     <button
                         onClick={handleRemoveBackground}
                         disabled={isProcessing}
                         className={`
-                            relative overflow-hidden flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all group
+                            relative overflow-hidden flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all group mr-2
                             ${isProcessing 
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                                 : 'text-white hover:shadow-lg hover:scale-105 active:scale-95'
@@ -84,6 +115,8 @@ export const BottomToolbar = () => {
                         </div>
                     </button>
                 )}
+
+
             </div>
         </div>
     )
