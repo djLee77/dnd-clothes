@@ -11,9 +11,15 @@ export const MainCanvas = () => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const { scale, position, setPosition, setScale } = useCanvasStore()
   const { items, addItem, updateItem } = useSceneStore()
-  const { selectedItemId, setSelectedItemId } = useUiStore()
+  const { selectedItemId, setSelectedItemId, setStageRef } = useUiStore()
   const stageRef = useRef<any>(null)
   const transformerRef = useRef<any>(null)
+
+  useEffect(() => {
+    if (stageRef.current) {
+        setStageRef(stageRef.current)
+    }
+  }, [setStageRef, items, selectedItemId])
 
   useEffect(() => {
     const updateDimensions = () => {

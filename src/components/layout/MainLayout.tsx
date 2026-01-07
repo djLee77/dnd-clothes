@@ -12,7 +12,7 @@ interface MainLayoutProps {
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { isSidebarOpen, toggleSidebar } = useUiStore()
+  const { isSidebarOpen, toggleSidebar, assetLocation } = useUiStore()
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-[#f8f9fc] transition-colors duration-300 relative">
@@ -36,8 +36,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
 
 
-        {/* Contextual Bottom Toolbar (New) */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
+        {/* Contextual Toolbar (Moves to top when bottom asset bar is active) */}
+        <div className={`absolute left-1/2 -translate-x-1/2 z-30 transition-all duration-500 ${assetLocation === 'bottom' ? 'top-20' : 'bottom-6'}`}>
            <BottomToolbar />
         </div>
         

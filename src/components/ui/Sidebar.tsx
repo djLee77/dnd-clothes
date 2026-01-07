@@ -7,7 +7,7 @@ import { useScrapStore } from '../../store/scrapStore'
 import { useAssetStore } from '../../store/assetStore'
 
 export const Sidebar = () => {
-  const { isSidebarOpen, toggleSidebar, isExpanded, toggleExpanded, assetLocation, setAssetLocation, transitionTo, setTransitionTo, selectedItemId } = useUiStore()
+  const { isSidebarOpen, toggleSidebar, isExpanded, toggleExpanded, assetLocation, setAssetLocation, transitionTo, setTransitionTo, selectedItemId, stageRef, setSelectedItemId } = useUiStore()
   const { items, updateItem } = useSceneStore()
   const { scraps, fetchScraps, saveCurrentScrap, loadScrap, deleteScrap, isLoading } = useScrapStore()
   const { categories, assets, addCategory: storeAddCategory, deleteCategory: storeDeleteCategory, addAsset, deleteAsset: storeDeleteAsset, fetchData: fetchAssetData } = useAssetStore()
@@ -113,11 +113,36 @@ export const Sidebar = () => {
         return
     }
     try {
-        await saveCurrentScrap(newScrapName)
+        let thumbnail = ''
+        if (stageRef) {
+            // Deselect to avoid transformer in thumbnail
+            setSelectedItemId(null)
+            
+            // Wait a bit for React to re-render without the Transformer
+            await new Promise(resolve => setTimeout(resolve, 100))
+            
+            try {
+                console.log('Attempting to generate thumbnail...')
+                thumbnail = stageRef.toDataURL({
+                    pixelRatio: 0.4, // Lower quality for dashboard preview
+                    mimeType: 'image/jpeg',
+                    quality: 0.7
+                })
+                console.log('Thumbnail generated, length:', thumbnail.length)
+            } catch (e) {
+                console.error('Thumbnail generation failed:', e)
+            }
+        } else {
+            console.log('No stageRef available')
+        }
+        
+        console.log('Saving scrap with thumbnail length:', thumbnail?.length)
+        await saveCurrentScrap(newScrapName, thumbnail)
         setNewScrapName('')
         alert('스크랩이 저장되었습니다.')
-    } catch (error) {
-        alert('저장에 실패했습니다.')
+    } catch (error: any) {
+        console.error('Save failed:', error)
+        alert(`저장에 실패했습니다: ${error.message}`)
     }
   }
 

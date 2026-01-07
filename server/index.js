@@ -52,10 +52,17 @@ let db;
                 user_id INTEGER NOT NULL,
                 name TEXT NOT NULL,
                 data TEXT NOT NULL,
+                thumbnail TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
         `);
+
+        try {
+            await db.exec('ALTER TABLE scraps ADD COLUMN thumbnail TEXT');
+        } catch (e) {
+            // Column already exists
+        }
 
         await db.exec(`
             CREATE TABLE IF NOT EXISTS categories (
@@ -153,7 +160,7 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
 // Scrap routes
 app.get('/api/scraps', authenticateToken, async (req, res) => {
     try {
-        const scraps = await db.all('SELECT id, name, created_at FROM scraps WHERE user_id = ? ORDER BY created_at DESC', [req.user.userId]);
+        const scraps = await db.all('SELECT id, name, thumbnail, created_at FROM scraps WHERE user_id = ? ORDER BY created_at DESC', [req.user.userId]);
         res.json(scraps);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch scraps' });
@@ -171,11 +178,11 @@ app.get('/api/scraps/:id', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/scraps', authenticateToken, async (req, res) => {
-    const { name, data } = req.body;
+    const { name, data, thumbnail } = req.body;
     if (!name || !data) return res.status(400).json({ error: 'Name and data are required' });
 
     try {
-        const result = await db.run('INSERT INTO scraps (user_id, name, data) VALUES (?, ?, ?)', [req.user.userId, name, JSON.stringify(data)]);
+        const result = await db.run('INSERT INTO scraps (user_id, name, data, thumbnail) VALUES (?, ?, ?, ?)', [req.user.userId, name, JSON.stringify(data), thumbnail]);
         res.status(201).json({ id: result.lastID, name, message: 'Scrap saved successfully' });
     } catch (err) {
         console.error('Error saving scrap:', err);

@@ -9,6 +9,7 @@ interface UiState {
   assetLocation: 'sidebar' | 'bottom'
   transitionTo: 'sidebar' | 'bottom' | null
   selectedItemId: string | null
+  stageRef: any | null
   setActiveTool: (tool: ToolType) => void
   toggleSidebar: () => void
   toggleExpanded: () => void
@@ -16,6 +17,7 @@ interface UiState {
   setTransitionTo: (to: 'sidebar' | 'bottom' | null) => void
   setSidebarOpen: (isOpen: boolean) => void
   setSelectedItemId: (id: string | null) => void
+  setStageRef: (ref: any) => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -25,6 +27,7 @@ export const useUiStore = create<UiState>((set) => ({
   assetLocation: 'sidebar',
   transitionTo: null,
   selectedItemId: null,
+  stageRef: null,
   setActiveTool: (tool) => set({ activeTool: tool }),
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
   toggleExpanded: () => set((state) => ({ isExpanded: !state.isExpanded })),
@@ -35,4 +38,5 @@ export const useUiStore = create<UiState>((set) => ({
   setTransitionTo: (to) => set({ transitionTo: to }),
   setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
   setSelectedItemId: (id) => set({ selectedItemId: id }),
+  setStageRef: (ref) => set({ stageRef: ref }),
 }))

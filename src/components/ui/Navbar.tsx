@@ -19,7 +19,10 @@ export const Navbar = () => {
 
         {/* Menu Items */}
         <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group">
+            <button 
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group"
+            >
                 <LayoutGrid size={18} className="group-hover:text-black transition-colors" />
                 <span>대쉬보드</span>
             </button>

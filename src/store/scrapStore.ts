@@ -5,6 +5,7 @@ import { useSceneStore } from './sceneStore';
 export interface Scrap {
   id: number;
   name: string;
+  thumbnail?: string;
   created_at: string;
 }
 
@@ -13,7 +14,7 @@ interface ScrapState {
   isLoading: boolean;
   error: string | null;
   fetchScraps: () => Promise<void>;
-  saveCurrentScrap: (name: string) => Promise<void>;
+  saveCurrentScrap: (name: string, thumbnail: string) => Promise<void>;
   loadScrap: (id: number) => Promise<void>;
   deleteScrap: (id: number) => Promise<void>;
 }
@@ -42,7 +43,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
     }
   },
 
-  saveCurrentScrap: async (name: string) => {
+  saveCurrentScrap: async (name: string, thumbnail: string) => {
     const { token } = useAuthStore.getState();
     const { items } = useSceneStore.getState();
     if (!token) return;
@@ -55,7 +56,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify({ name, data: items })
+        body: JSON.stringify({ name, data: items, thumbnail })
       });
       if (!response.ok) throw new Error('스크랩 저장에 실패했습니다.');
       await get().fetchScraps();

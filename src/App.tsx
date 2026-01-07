@@ -4,6 +4,7 @@ import { MainLayout } from './components/layout/MainLayout'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { LoginPage } from './pages/LoginPage'
 import { useAuthStore } from './store/authStore'
+import { DashboardPage } from './pages/DashboardPage'
 
 function App() {
   return (
@@ -14,6 +15,11 @@ function App() {
             <MainLayout>
               <MainCanvas />
             </MainLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <DashboardPage />
           </ProtectedRoute>
         } />
         <Route path="/login" element={<LoginPage />} />

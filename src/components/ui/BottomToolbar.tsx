@@ -5,7 +5,7 @@ import { Wand2, Loader2, X, BringToFront, SendToBack, MoveUp, MoveDown } from 'l
 import { removeBackground } from '@imgly/background-removal'
 
 export const BottomToolbar = () => {
-    const { selectedItemId, setSelectedItemId } = useUiStore()
+    const { selectedItemId, setSelectedItemId, assetLocation } = useUiStore()
     const { items, updateItem, bringToFront, sendToBack, moveForward, moveBackward } = useSceneStore()
     const [isProcessing, setIsProcessing] = useState(false)
 
@@ -38,7 +38,7 @@ export const BottomToolbar = () => {
     if (!selectedItemId || !selectedItem) return null
 
     return (
-        <div className="flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 animate-slide-up origin-bottom">
+        <div className={`flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 ${assetLocation === 'bottom' ? 'animate-slide-down origin-top' : 'animate-slide-up origin-bottom'}`}>
             {/* Selection Info (Optional) */}
             <div className="flex items-center gap-3 px-3 border-r border-gray-200">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Selected</span>
