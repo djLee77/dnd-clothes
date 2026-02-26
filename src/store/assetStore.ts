@@ -40,10 +40,10 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const [catRes, assetRes] = await Promise.all([
-        fetch('http://localhost:5000/api/categories', {
+        fetch('/api/categories', {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch('http://localhost:5000/api/assets', {
+        fetch('/api/assets', {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
@@ -66,7 +66,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     if (!token) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/categories', {
+      const response = await fetch('/api/categories', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/categories/${id}`, {
+      const response = await fetch(`/api/categories/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -104,7 +104,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     if (!token) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/assets', {
+      const response = await fetch('/api/assets', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/assets/${id}`, {
+      const response = await fetch(`/api/assets/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

@@ -30,7 +30,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch('http://localhost:5000/api/scraps', {
+      const response = await fetch('/api/scraps', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('스크랩 목록을 가져오지 못했습니다.');
@@ -50,7 +50,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch('http://localhost:5000/api/scraps', {
+      const response = await fetch('/api/scraps', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`http://localhost:5000/api/scraps/${id}`, {
+      const response = await fetch(`/api/scraps/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('스크랩을 불러오지 못했습니다.');
@@ -95,7 +95,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/scraps/${id}`, {
+      const response = await fetch(`/api/scraps/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
