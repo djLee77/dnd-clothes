@@ -2,14 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
+import pkg from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
 
+const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -28,66 +28,61 @@ app.use((req, res, next) => {
 });
 
 // Database initialization
-let db;
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/dnd_closet',
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
 (async () => {
     try {
-        db = await open({
-            filename: process.env.DB_PATH || './database.sqlite',
-            driver: sqlite3.Database
-        });
-
-        await db.exec(`
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 username TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
-        await db.exec(`
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS scraps (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users (id),
                 name TEXT NOT NULL,
                 data TEXT NOT NULL,
                 thumbnail TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id)
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
         try {
-            await db.exec('ALTER TABLE scraps ADD COLUMN thumbnail TEXT');
+            await pool.query('ALTER TABLE scraps ADD COLUMN thumbnail TEXT');
         } catch (e) {
             // Column already exists
         }
 
-        await db.exec(`
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users (id)
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users (id),
+                name TEXT NOT NULL
             )
         `);
 
-        await db.exec(`
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS assets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                categoryId INTEGER NOT NULL,
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users (id),
+                "categoryId" INTEGER NOT NULL REFERENCES categories (id),
                 src TEXT NOT NULL,
                 name TEXT,
                 price TEXT,
-                siteUrl TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id),
-                FOREIGN KEY (categoryId) REFERENCES categories (id)
+                "siteUrl" TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        console.log('Connected to SQLite database');
+        console.log('Connected to PostgreSQL database');
     } catch (err) {
         console.error('Database initialization failed:', err);
     }
@@ -125,11 +120,12 @@ app.post('/api/auth/register', async (req, res) => {
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const result = await db.run('INSERT INTO users (email, password, username) VALUES (?, ?, ?)', [email, hashedPassword, username]);
-        const token = jwt.sign({ userId: result.lastID, email }, JWT_SECRET, { expiresIn: '24h' });
-        res.status(201).json({ message: 'User registered successfully', token, user: { id: result.lastID, email, username } });
+        const result = await pool.query('INSERT INTO users (email, password, username) VALUES ($1, $2, $3) RETURNING id', [email, hashedPassword, username]);
+        const userId = result.rows[0].id;
+        const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '24h' });
+        res.status(201).json({ message: 'User registered successfully', token, user: { id: userId, email, username } });
     } catch (err) {
-        if (err.message.includes('UNIQUE constraint failed')) return res.status(400).json({ error: 'Email already exists' });
+        if (err.message.includes('unique constraint') || err.message.includes('UNIQUE constraint')) return res.status(400).json({ error: 'Email already exists' });
         res.status(500).json({ error: 'Failed to register user' });
     }
 });
@@ -139,19 +135,21 @@ app.post('/api/auth/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
 
     try {
-        const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = result.rows[0];
         if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: 'Invalid email or password' });
         const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
         res.json({ message: 'Login successful', token, user: { id: user.id, email: user.email, username: user.username } });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Failed to login' });
     }
 });
 
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
     try {
-        const user = await db.get('SELECT id, email, username FROM users WHERE id = ?', [req.user.userId]);
-        res.json(user);
+        const result = await pool.query('SELECT id, email, username FROM users WHERE id = $1', [req.user.userId]);
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch user context' });
     }
@@ -160,8 +158,8 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
 // Scrap routes
 app.get('/api/scraps', authenticateToken, async (req, res) => {
     try {
-        const scraps = await db.all('SELECT id, name, thumbnail, created_at FROM scraps WHERE user_id = ? ORDER BY created_at DESC', [req.user.userId]);
-        res.json(scraps);
+        const result = await pool.query('SELECT id, name, thumbnail, created_at FROM scraps WHERE user_id = $1 ORDER BY created_at DESC', [req.user.userId]);
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch scraps' });
     }
@@ -169,7 +167,8 @@ app.get('/api/scraps', authenticateToken, async (req, res) => {
 
 app.get('/api/scraps/:id', authenticateToken, async (req, res) => {
     try {
-        const scrap = await db.get('SELECT * FROM scraps WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
+        const result = await pool.query('SELECT * FROM scraps WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
+        const scrap = result.rows[0];
         if (!scrap) return res.status(404).json({ error: 'Scrap not found' });
         res.json(scrap);
     } catch (err) {
@@ -182,8 +181,8 @@ app.post('/api/scraps', authenticateToken, async (req, res) => {
     if (!name || !data) return res.status(400).json({ error: 'Name and data are required' });
 
     try {
-        const result = await db.run('INSERT INTO scraps (user_id, name, data, thumbnail) VALUES (?, ?, ?, ?)', [req.user.userId, name, JSON.stringify(data), thumbnail]);
-        res.status(201).json({ id: result.lastID, name, message: 'Scrap saved successfully' });
+        const result = await pool.query('INSERT INTO scraps (user_id, name, data, thumbnail) VALUES ($1, $2, $3, $4) RETURNING id', [req.user.userId, name, JSON.stringify(data), thumbnail]);
+        res.status(201).json({ id: result.rows[0].id, name, message: 'Scrap saved successfully' });
     } catch (err) {
         console.error('Error saving scrap:', err);
         res.status(500).json({ error: 'Failed to save scrap' });
@@ -193,8 +192,8 @@ app.post('/api/scraps', authenticateToken, async (req, res) => {
 // Category routes
 app.get('/api/categories', authenticateToken, async (req, res) => {
     try {
-        const categories = await db.all('SELECT * FROM categories WHERE user_id = ?', [req.user.userId]);
-        res.json(categories);
+        const result = await pool.query('SELECT * FROM categories WHERE user_id = $1', [req.user.userId]);
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch categories' });
     }
@@ -204,8 +203,8 @@ app.post('/api/categories', authenticateToken, async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Name is required' });
     try {
-        const result = await db.run('INSERT INTO categories (user_id, name) VALUES (?, ?)', [req.user.userId, name]);
-        res.status(201).json({ id: result.lastID, name });
+        const result = await pool.query('INSERT INTO categories (user_id, name) VALUES ($1, $2) RETURNING id', [req.user.userId, name]);
+        res.status(201).json({ id: result.rows[0].id, name });
     } catch (err) {
         res.status(500).json({ error: 'Failed to create category' });
     }
@@ -213,11 +212,8 @@ app.post('/api/categories', authenticateToken, async (req, res) => {
 
 app.delete('/api/categories/:id', authenticateToken, async (req, res) => {
     try {
-        // Also delete assets in this category? 
-        // For simplicity, let's just delete the category. Or prevent deletion if assets exist.
-        // Let's delete assets too for a clean removal.
-        await db.run('DELETE FROM assets WHERE categoryId = ? AND user_id = ?', [req.params.id, req.user.userId]);
-        await db.run('DELETE FROM categories WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
+        await pool.query('DELETE FROM assets WHERE "categoryId" = $1 AND user_id = $2', [req.params.id, req.user.userId]);
+        await pool.query('DELETE FROM categories WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
         res.json({ message: 'Category and its assets deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete category' });
@@ -227,8 +223,8 @@ app.delete('/api/categories/:id', authenticateToken, async (req, res) => {
 // Asset routes
 app.get('/api/assets', authenticateToken, async (req, res) => {
     try {
-        const assets = await db.all('SELECT * FROM assets WHERE user_id = ? ORDER BY created_at DESC', [req.user.userId]);
-        res.json(assets);
+        const result = await pool.query('SELECT id, user_id, "categoryId", src, name, price, "siteUrl", created_at FROM assets WHERE user_id = $1 ORDER BY created_at DESC', [req.user.userId]);
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch assets' });
     }
@@ -238,19 +234,20 @@ app.post('/api/assets', authenticateToken, async (req, res) => {
     const { categoryId, src, name, price, siteUrl } = req.body;
     if (!categoryId || !src) return res.status(400).json({ error: 'CategoryId and src are required' });
     try {
-        const result = await db.run(
-            'INSERT INTO assets (user_id, categoryId, src, name, price, siteUrl) VALUES (?, ?, ?, ?, ?, ?)',
+        const result = await pool.query(
+            'INSERT INTO assets (user_id, "categoryId", src, name, price, "siteUrl") VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
             [req.user.userId, categoryId, src, name, price, siteUrl]
         );
-        res.status(201).json({ id: result.lastID, categoryId, src, name, price, siteUrl });
+        res.status(201).json({ id: result.rows[0].id, categoryId, src, name, price, siteUrl });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Failed to save asset' });
     }
 });
 
 app.delete('/api/assets/:id', authenticateToken, async (req, res) => {
     try {
-        await db.run('DELETE FROM assets WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
+        await pool.query('DELETE FROM assets WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
         res.json({ message: 'Asset deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete asset' });
@@ -261,6 +258,14 @@ app.delete('/api/assets/:id', authenticateToken, async (req, res) => {
 app.use('/api/*', (req, res) => {
     console.log(`404 - API route not found: ${req.method} ${req.url}`);
     res.status(404).json({ error: `Route ${req.method} ${req.url} not found` });
+});
+
+// Serve frontend build in production
+const frontendBuildPath = path.join(__dirname, '../dist');
+app.use(express.static(frontendBuildPath));
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
