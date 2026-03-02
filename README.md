@@ -1,6 +1,6 @@
-# D&D Wardrobe 👗👕
+# D&D Clothes 👗👕
 
-![D&D Wardrobe Deploy Status](https://img.shields.io/badge/Deploy-Success-brightgreen)
+![D&D Clothes Deploy Status](https://img.shields.io/badge/Deploy-Success-brightgreen)
 ![React](https://img.shields.io/badge/React-18-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue.svg)
 

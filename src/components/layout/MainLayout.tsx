@@ -6,6 +6,7 @@ import { useUiStore } from '../../store/uiStore'
 import { PanelRightOpen } from 'lucide-react'
 import { Navbar } from '../ui/Navbar'
 import { BottomAssetBar } from '../ui/BottomAssetBar'
+import { TutorialOverlay, TutorialCompleteModal, useTutorial } from '../ui/TutorialOverlay'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -13,6 +14,7 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { isSidebarOpen, toggleSidebar, assetLocation } = useUiStore()
+  const { showTutorial, showCompleteModal, handleTutorialComplete, handleCloseComplete } = useTutorial()
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-[#f8f9fc] transition-colors duration-300 relative">
@@ -30,7 +32,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         {/* <div className="h-14 bg-white border-b z-10"></div> */}
 
         {/* Canvas Area */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden" data-tutorial="canvas-area">
            {children}
         </div>
 
@@ -57,6 +59,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
       {/* Right Sidebar */}
       <Sidebar />
+
+      {/* Tutorial Overlay */}
+      {showTutorial && (
+        <TutorialOverlay onComplete={handleTutorialComplete} />
+      )}
+
+      {/* Tutorial Complete Modal */}
+      {showCompleteModal && (
+        <TutorialCompleteModal onClose={handleCloseComplete} />
+      )}
     </div>
   )
 }

@@ -151,11 +151,13 @@ export const Sidebar = () => {
   return (
     <div 
       className={`relative h-[calc(100vh-6rem)] mt-20 mr-4 mb-4 bg-white/70 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col pointer-events-auto border border-white/60 transition-all duration-500 ease-in-out animate-dramatic-slide-in-right ${isExpanded ? 'w-[45rem]' : 'w-80'}`}
+      data-tutorial="sidebar"
     >
       {/* Expand/Collapse Toggle Button */}
       <button
         onClick={toggleExpanded}
         className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-12 bg-white/90 backdrop-blur-md border border-white/80 rounded-xl shadow-lg flex items-center justify-center text-gray-400 hover:text-black hover:scale-110 transition-all z-50 group"
+        data-tutorial="sidebar-expand"
         title={isExpanded ? "축소하기" : "펼치기"}
       >
         {isExpanded ? (
@@ -171,6 +173,7 @@ export const Sidebar = () => {
           onClick={handleMoveToBottom}
           className="fixed bottom-10 left-1/2 -translate-x-1/2 w-14 h-10 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/80 rounded-2xl flex flex-col items-center justify-center text-gray-500 hover:text-black hover:scale-110 hover:shadow-[0_12px_40px_rgb(0,0,0,0.15)] transition-all z-[100] group"
           title="하단 바 모드로 전환"
+          data-tutorial="move-to-bottom"
         >
           <ChevronUp size={24} className="group-hover:-translate-y-1 transition-transform" />
           <span className="text-[8px] font-black uppercase tracking-tighter -mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Asset Bar</span>
@@ -323,7 +326,7 @@ export const Sidebar = () => {
               <div className="space-y-4">
                 
                 {/* Add Category Section */}
-                <div className="flex items-center gap-2 mb-6 group focus-within:ring-2 focus-within:ring-brand-orange/10 rounded-full transition-shadow">
+                <div className="flex items-center gap-2 mb-6 group focus-within:ring-2 focus-within:ring-brand-orange/10 rounded-full transition-shadow" data-tutorial="add-category-input">
                     <input
                         type="text"
                         value={newCategoryName}
@@ -363,6 +366,7 @@ export const Sidebar = () => {
                                     onClick={() => fileInputRefs.current[category.id]?.click()}
                                     className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all"
                                     title="이미지 업로드"
+                                    data-tutorial="upload-image-btn"
                                 >
                                     <Upload size={18} />
                                 </button>
