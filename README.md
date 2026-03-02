@@ -1,96 +1,118 @@
-# D&D Clothes 👗👕
+# D&D Closet (Wardrobe) 👗👕
 
-![D&D Clothes Deploy Status](https://img.shields.io/badge/Deploy-Success-brightgreen)
 ![React](https://img.shields.io/badge/React-18-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)
+![Vite](https://img.shields.io/badge/Vite-5-purple.svg)
+![Render](https://img.shields.io/badge/Deploy-Render-black.svg)
 
-> 나만의 옷장을 관리하고, 원하는 대로 옷을 배치해볼 수 있는 커스텀 코디 스크랩보드 플랫폼입니다.
-
-🔗 **배포 URL:** [https://dnd-clothes.onrender.com/](https://dnd-clothes.onrender.com/)
+> 나만의 옷장을 관리하고, 원하는 대로 옷을 배치해볼 수 있는 커스텀 코디 스크랩보드 플랫폼입니다. 사진을 올리기만 하면 AI가 배경을 자동으로 제거해주어 간편하게 나만의 룩북을 만들 수 있습니다.
 
 ---
 
-## 🌟 주요 기능 (Features)
+## 🌟 주요 기능 (Key Features)
 
 *   **인터랙티브 스크랩보드 (Scrapboard)**
-    *   캔버스(Canvas) 기반의 스크랩보드 위에서 옷들을 자유롭게 배치할 수 있습니다.
-    *   개별 아이템의 크기 조절, 회전, 위치 이동 및 순서 변경(Z-index)이 가능합니다.
+    *   초대형 캔버스(Canvas) 위에서 옷들을 자유롭게 드래그 앤 드롭으로 배치할 수 있습니다.
+    *   개별 아이템의 크기 조절, 회전, 위치 이동 및 순서 변경(Z-index 위/아래 이동)이 가능합니다.
 *   **AI 배경 제거 (Background Removal)**
-    *   업로드한 옷 이미지의 배경을 자동으로 제거하여 깔끔한 누끼 이미지만 스크랩보드에 사용할 수 있습니다. (`@imgly/background-removal` 활용)
-*   **코디 저장 및 불러오기**
-    *   완성된 스크랩보드 상태를 저장할 수 있습니다.
-    *   저장 과정에서 자동으로 썸네일이 생성되어 대시보드에서 내가 만든 코디를 한눈에 확인할 수 있습니다.
+    *   사진첩에서 옷 이미지를 업로드하면 배경을 자동으로 제거(누끼 따기)하여 깔끔한 의상 이미지만 스크랩보드에 사용할 수 있습니다. (`@imgly/background-removal` AI 모델 활용)
+*   **개인 옷장 관리 (Asset & Category Management)**
+    *   나만의 옷들을 '아우터', '상의', '하의' 등 원하는 카테고리별로 폴더링하여 보관할 수 있습니다.
+    *   각 옷마다 가격, 상품명, 구매 링크(URL) 정보를 기록해둘 수 있습니다.
 *   **다이내믹 UI 및 애니메이션**
-    *   에셋 툴바를 사이드바 혹은 하단 태스크바 형태로 자유롭게 전환 가능한 유연한 UI를 제공합니다.
-    *   부드러운 애니메이션과 스포트라이트 마우스 효과 등을 통해 사용자 경험(UX)을 극대화했습니다.
+    *   옷장(에셋 목록)을 사이드바 형태 혹은 화면 하단의 태스크바 형태로 자유롭게 전환 가능한 유연한 UI를 제공합니다.
+    *   부드러운 페이지 전환, 마우스를 따라다니는 스포트라이트 조명 등 사용자 경험(UX) 최적화.
+*   **코디 저장 및 대시보드**
+    *   완성된 스크랩보드 상태(위치, 크기 정보 등)를 서버에 저장할 수 있습니다.
+    *   저장 과정에서 자동으로 썸네일이 생성되어 대시보드에서 내가 만든 코디들을 사진첩처럼 한눈에 모아볼 수 있습니다.
 *   **사용자 인증 (Authentication)**
-    *   회원가입 및 로그인을 통해 본인만의 보드와 아이템 목록을 안전하게 관리합니다. (JWT + bcrypt 암호화 적용)
+    *   회원가입 및 로그인을 통해 본인만의 보드와 아이템 목록을 분리하여 안전하게 관리합니다. (JWT + bcrypt 암호화)
+
+---
+
+## 💡 사용 방법 (How to use)
+
+프로젝트에 처음 접속하신 분들을 위한 간단한 튜토리얼입니다. (우측 상단의 '?' 튜토리얼 가이드 버튼을 통해서도 확인 가능합니다)
+
+1. **카테고리 생성하기:** 우측 사이드바(Properties) 패널 하단의 입력창에 `아우터`, `신발` 등 원하는 이름을 적고 `+` 버튼을 눌러 옷을 담을 빈 폴더를 만듭니다.
+2. **옷 이미지 업로드 및 정보 입력:** 방금 만든 카테고리에 마우스를 올리면 생기는 **`업로드(구름 모양)` 아이콘**을 클릭합니다. 내 컴퓨터에서 옷 사진을 고르면 배경이 싹 지워진 상태로 옷장에 추가됩니다. (업로드 후 이름/가격/링크를 적을 수 있는 창이 뜹니다.)
+3. **코디하기 (드래그 앤 드롭):** 옷장에 등록된 옷 이미지를 마우스로 꾹 누른 채 왼쪽의 넓은 캔버스 위로 끌어다 놓습니다. 
+4. **저장하기:** 코디가 마음에 든다면 가장 아래쪽의 `Saved Scraps` 영역에 이름을 적고 디스켓 버튼을 눌러 룩북을 저장하세요!
+
+---
 
 ## 🛠 기술 스택 (Tech Stack)
 
 ### Frontend
 *   **Framework:** React 18, TypeScript, Vite
-*   **Styling:** Tailwind CSS, PostCSS, Lucide React
-*   **State Management:** Zustand, React Query
-*   **Canvas & Graphics:** Konva, React Konva
+*   **Styling:** Tailwind CSS, PostCSS, Lucide React (Icons)
+*   **State Management:** Zustand
+*   **Canvas & Graphics:** Konva, React Konva, `use-image`
 *   **Image Processing:** `@imgly/background-removal`
 *   **Routing:** React Router DOM
 
 ### Backend
 *   **Runtime:** Node.js, Express
-*   **Database:** PostgreSQL / SQLite (`pg`)
+*   **Database:** PostgreSQL (`pg` library 탑재) + Supabase
 *   **Security:** bcryptjs, jsonwebtoken (JWT), CORS
-*   **Deployment:** Render
 
-## 🚀 로컬 실행 방법 (Getting Started)
+---
 
-본 프로젝트는 Frontend(`src`)와 Backend(`server`)가 통합된 형태를 가지고 있습니다.
+## 🚀 로컬 실행 방법 (Local Development)
+
+본 프로젝트는 Frontend(`src`)와 Backend(`server`)가 하나의 레포지토리에 통합된 형태(Monorepo 느낌)를 가지고 있습니다.
 
 ### 1. 클론 및 의존성 설치
 ```bash
 git clone <repository-url>
 cd dnd-closet
 
-# 루트 및 클라이언트 의존성 설치
+# 루트(Front) 및 서버(Back) 의존성 동시 설치
 npm install
-
-# 서버 의존성 설치
-cd server
-npm install
-cd ..
+npm run postinstall 
 ```
 
 ### 2. 환경 변수 설정
-`server` 폴더 내에 `.env` 파일을 생성하고 다음 환경 변수를 설정합니다. (`server/.env.example` 또는 설정 파일 참고)
+`server` 폴더 내에 `.env` 파일을 복사/생성하고 다음 환경 변수를 설정합니다. 
 
 ```env
 PORT=5000
-JWT_SECRET=your_jwt_secret_key
-# 데이터베이스 설정 (SQLite 혹은 Postgres URL)
-DB_PATH=./database.sqlite
-# DATABASE_URL=postgres://user:password@localhost:5432/dndcloset
+JWT_SECRET=supersecretkey_change_me_in_production
+
+# PostgreSQL 데이터베이스 연결 주소 (필수)
+# 로컬 개발 시에도 클라우드 데이터베이스를 이용하거나 로컬 Postgres 주소를 입력합니다.
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres
 ```
 
-### 3. 프로젝트 실행 (개발 환경)
+### 3. 프로젝트 동시 실행
+백엔드와 프론트엔드 터미널을 각각 열어 실행합니다.
 
-클라이언트(Vite 서버)와 백엔드(Express 서버)를 각각 실행해주어야 합니다.
-
-**백엔드 서버 실행:**
+**서버 (Backend) 실행:**
 ```bash
-# 터미널 창 1
-cd server
-npm run dev
+# 터미널 창 1 (루트 폴더에서)
+npm start 
+# (이는 `cd server && npm start` 와 동일하게 작동합니다)
 ```
 
-**프론트엔드 서버 실행:**
+**클라이언트 (Frontend) 실행:**
 ```bash
-# 터미널 창 2 (루트 경로)
+# 터미널 창 2 (루트 폴더에서)
 npm run dev
 ```
 
 - 클라이언트는 기본적으로 `http://localhost:5173` 에서 실행됩니다.
-- 테스트 및 코디 스크랩 기능을 자유롭게 사용해볼 수 있습니다.
+- Vite 설정(`vite.config.ts`)에 Proxy가 설정되어 있어, 프론트에서 `/api`로 보내는 요청은 자동으로 `http://localhost:5000` 백엔드로 포워딩됩니다.
 
 ---
 
-> 이 프로젝트는 CI/CD가 구축되어 있어 GitHub 메인 브랜치 업데이트 시 Render를 통해 자동으로 배포됩니다.
+## ☁️ 배포 안내 (Deployment)
+
+이 프로젝트는 **Render.com(웹 서버)** 과 **Supabase(무료 PostgreSQL DB)** 를 결합하여 데이터 유실 없는 완벽한 무료 배포 구조를 갖추고 있습니다.
+
+1. **Supabase 설정:** 새 프로젝트를 생성하고, `Database` 탭에서 **Connection Pooler (IPv4)** 용 주소를 복사합니다. (포트 6543 사용 권장)
+2. **Render 배포:** Github 레포지토리를 Web Service로 연동합니다.
+   * Build Command: `npm install && npm run build`
+   * Start Command: `npm start`
+3. **환경 변수 세팅:** Render의 `Environment` 탭에 들어가서 `DATABASE_URL` (Supabase 연결 주소)과 `JWT_SECRET` (임의의 비밀번호 키)을 등록해줍니다.
+4. **완료!** Render가 스스로 백/프론트엔드를 빌드하고 통합 서버를 띄웁니다.
