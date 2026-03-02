@@ -11,6 +11,8 @@ export const LoginPage = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
+  const [code, setCode] = useState('')
+  const [isCodeSent, setIsCodeSent] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +31,34 @@ export const LoginPage = () => {
     setIsLoading(true)
 
     if (isForgotPassword) {
-      if (!username || !email || !newPassword) {
+      if (!isCodeSent) {
+          // Send Code Logic
+          if (!email) {
+              setError('이메일을 입력해주세요.')
+              setIsLoading(false)
+              return
+          }
+          try {
+              const response = await fetch('/api/auth/send-code', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email })
+              })
+              const data = await response.json()
+              if (!response.ok) throw new Error(data.error || '코드 발송에 실패했습니다.')
+              
+              alert('인증 코드가 발송되었습니다. 이메일을 확인해주세요.')
+              setIsCodeSent(true)
+          } catch (err: any) {
+              setError(err.message)
+          } finally {
+              setIsLoading(false)
+          }
+          return
+      }
+
+      // Reset Password Logic
+      if (!email || !code || !newPassword) {
         setError('모든 칸을 입력해주세요.')
         setIsLoading(false)
         return
@@ -38,7 +67,7 @@ export const LoginPage = () => {
         const response = await fetch('/api/auth/reset-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, username, newPassword })
+          body: JSON.stringify({ email, code, newPassword })
         })
 
         const data = await response.json()
@@ -49,9 +78,11 @@ export const LoginPage = () => {
 
         alert('비밀번호가 성공적으로 변경되었습니다. 새로운 비밀번호로 로그인해주세요.')
         setIsForgotPassword(false)
+        setIsCodeSent(false)
         setIsLogin(true)
         setPassword('')
         setNewPassword('')
+        setCode('')
       } catch (err: any) {
         setError(err.message)
       } finally {
@@ -145,17 +176,17 @@ export const LoginPage = () => {
                         </div>
                     )}
 
-                    {isForgotPassword && (
+                    {isForgotPassword && isCodeSent && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Username</label>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Verification Code</label>
                             <div className="relative group/input">
-                                <User size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-black transition-colors duration-300" />
+                                <Stars size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-black transition-colors duration-300" />
                                 <input 
                                     type="text" 
-                                    placeholder="가입했던 유저네임을 입력해주세요"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    required={isForgotPassword}
+                                    placeholder="이메일로 발송된 6자리 코드"
+                                    value={code}
+                                    onChange={(e) => setCode(e.target.value)}
+                                    required={isCodeSent}
                                     className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90"
                                 />
                             </div>
@@ -172,7 +203,8 @@ export const LoginPage = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90"
+                                disabled={isCodeSent}
+                                className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                         </div>
                     </div>
@@ -199,7 +231,7 @@ export const LoginPage = () => {
                       </div>
                     )}
 
-                    {isForgotPassword && (
+                    {isForgotPassword && isCodeSent && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">New Password</label>
                             <div className="relative group/input">
@@ -209,7 +241,7 @@ export const LoginPage = () => {
                                     placeholder="새로운 비밀번호를 입력해주세요"
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
-                                    required={isForgotPassword}
+                                    required={isCodeSent}
                                     className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90"
                                 />
                             </div>
@@ -223,7 +255,7 @@ export const LoginPage = () => {
                     >
                          <div className="absolute inset-0 bg-gradient-to-r from-stone-800 via-stone-600 to-stone-800 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
                         <span className="relative z-10 flex items-center justify-center gap-2 group-hover/btn:text-white transition-colors">
-                            {isLoading ? '처리 중...' : (isForgotPassword ? '비밀번호 변경' : (isLogin ? '시작하기' : '회원가입 완료'))}
+                            {isLoading ? '처리 중...' : (isForgotPassword ? (isCodeSent ? '비밀번호 변경' : '인증 코드 받기') : (isLogin ? '시작하기' : '회원가입 완료'))}
                             {!isLoading && <ArrowRight size={20} className="group-hover/btn:translate-x-1 transition-transform" />}
                         </span>
                     </button>
@@ -235,7 +267,7 @@ export const LoginPage = () => {
                           기억나셨나요? {' '}
                           <button 
                               type="button"
-                              onClick={() => { setIsForgotPassword(false); setIsLogin(true); setError(null); }}
+                              onClick={() => { setIsForgotPassword(false); setIsCodeSent(false); setIsLogin(true); setError(null); }}
                               className="text-gray-900 hover:text-black font-bold transition-colors underline decoration-2 decoration-gray-200 underline-offset-4 hover:decoration-black"
                           >
                               로그인으로 돌아가기

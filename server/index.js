@@ -6,12 +6,26 @@ import pkg from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
 const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Very simple in-memory store for verification codes
+// In production, this should ideally be in Redis or DB with an expiration time
+const verificationCodes = new Map();
+
+// Configure Nodemailer transporter
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER, // Your Gmail address
+        pass: process.env.EMAIL_PASS,  // Your Gmail App Password
+    }
+});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -146,17 +160,92 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-app.post('/api/auth/reset-password', async (req, res) => {
-    const { email, username, newPassword } = req.body;
-    if (!email || !username || !newPassword) return res.status(400).json({ error: '이메일, 유저네임, 새 비밀번호가 모두 필요합니다.' });
+app.post('/api/auth/send-code', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: '이메일을 입력해주세요.' });
 
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1 AND username = $2', [email, username]);
+        // Check if user exists
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: '등록되지 않은 이메일입니다.' });
+        }
+
+        // Generate a 6-digit verification code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Store code with expiration (10 minutes)
+        verificationCodes.set(email, {
+            code,
+            expiresAt: Date.now() + 10 * 60 * 1000
+        });
+
+        // Send Email
+        const mailOptions = {
+            from: process.env.EMAIL_USER || 'no-reply@wardrobe.com',
+            to: email,
+            subject: '[Wardrobe] 비밀번호 재설정 인증 코드',
+            text: `안녕하세요.\n\n비밀번호 재설정을 위한 인증 코드는 다음과 같습니다:\n\n[ ${code} ]\n\n이 코드는 10분 동안 유효합니다.\n\n감사합니다.`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                    <h2 style="color: #333; text-align: center;">비밀번호 재설정 안내</h2>
+                    <p style="color: #555; line-height: 1.6;">안녕하세요.</p>
+                    <p style="color: #555; line-height: 1.6;">요청하신 비밀번호 재설정을 위한 6자리 인증 코드입니다.</p>
+                    <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #000; margin: 20px 0; border-radius: 5px;">
+                        ${code}
+                    </div>
+                    <p style="color: #888; font-size: 13px; text-align: center;">이 코드는 발급 후 10분 동안만 유효합니다.</p>
+                </div>
+            `
+        };
+
+        // Try to send email. If Env vars are not set, just simulate it for development
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+            await transporter.sendMail(mailOptions);
+        } else {
+            console.log(`\n\n[DEV MODE] Email simulation for ${email}`);
+            console.log(`[DEV MODE] Verification Code: ${code}\n\n`);
+            // We won't actually fail if EMAIL_USER wasn't set locally, to allow development testing
+        }
+
+        res.json({ message: '인증 코드가 이메일로 발송되었습니다.' });
+
+    } catch (err) {
+        console.error('Email send error:', err);
+        res.status(500).json({ error: '이메일 발송에 실패했습니다. (서버 설정 확인 필요)' });
+    }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) return res.status(400).json({ error: '이메일, 인증 코드, 새 비밀번호가 모두 필요합니다.' });
+
+    try {
+        const storedData = verificationCodes.get(email);
+
+        if (!storedData) {
+            return res.status(400).json({ error: '요청된 인증 코드가 없거나 만료되었습니다. 다시 코드를 발송해주세요.' });
+        }
+
+        if (Date.now() > storedData.expiresAt) {
+            verificationCodes.delete(email);
+            return res.status(400).json({ error: '인증 코드가 만료되었습니다. 다시 코드를 발송해주세요.' });
+        }
+
+        if (storedData.code !== code) {
+            return res.status(400).json({ error: '인증 코드가 일치하지 않습니다.' });
+        }
+
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         const user = result.rows[0];
-        if (!user) return res.status(404).json({ error: '입력하신 정보와 일치하는 계정을 찾을 수 없습니다.' });
+        if (!user) return res.status(404).json({ error: '저장된 정보를 찾을 수 없습니다.' });
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
+
+        // Clear code after successful use
+        verificationCodes.delete(email);
+
         res.json({ message: '비밀번호가 성공적으로 변경되었습니다.' });
     } catch (err) {
         console.error(err);
