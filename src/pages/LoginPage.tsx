@@ -11,6 +11,8 @@ export const LoginPage = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   
@@ -25,6 +27,38 @@ export const LoginPage = () => {
     e.preventDefault()
     setError(null)
     setIsLoading(true)
+
+    if (isForgotPassword) {
+      if (!username || !email || !newPassword) {
+        setError('모든 칸을 입력해주세요.')
+        setIsLoading(false)
+        return
+      }
+      try {
+        const response = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, username, newPassword })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || '비밀번호 변경에 실패했습니다.')
+        }
+
+        alert('비밀번호가 성공적으로 변경되었습니다. 새로운 비밀번호로 로그인해주세요.')
+        setIsForgotPassword(false)
+        setIsLogin(true)
+        setPassword('')
+        setNewPassword('')
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setIsLoading(false)
+      }
+      return
+    }
 
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register'
     const body = isLogin ? { email, password } : { email, password, username }
@@ -94,7 +128,7 @@ export const LoginPage = () => {
                 )}
 
                 <form onSubmit={handleAuth} className="space-y-6 relative z-10">
-                    {!isLogin && (
+                    {!isLogin && !isForgotPassword && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Username</label>
                             <div className="relative group/input">
@@ -105,6 +139,23 @@ export const LoginPage = () => {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     required={!isLogin}
+                                    className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {isForgotPassword && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Username</label>
+                            <div className="relative group/input">
+                                <User size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-black transition-colors duration-300" />
+                                <input 
+                                    type="text" 
+                                    placeholder="가입했던 유저네임을 입력해주세요"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    required={isForgotPassword}
                                     className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90"
                                 />
                             </div>
@@ -126,23 +177,44 @@ export const LoginPage = () => {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-center ml-1">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Password</label>
-                            <a href="#" className="text-xs font-semibold text-gray-500 hover:text-black transition-colors">Forgot?</a>
+                    {!isForgotPassword && (
+                      <div className="space-y-2">
+                          <div className="flex justify-between items-center ml-1">
+                              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Password</label>
+                              {isLogin && (
+                                <button type="button" onClick={() => { setIsForgotPassword(true); setError(null); }} className="text-xs font-semibold text-gray-500 hover:text-black transition-colors">Forgot?</button>
+                              )}
+                          </div>
+                          <div className="relative group/input">
+                              <Lock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-black transition-colors duration-300" />
+                              <input 
+                                  type="password" 
+                                  placeholder="••••••••"
+                                  value={password}
+                                  onChange={(e) => setPassword(e.target.value)}
+                                  required={!isForgotPassword}
+                                  className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90"
+                              />
+                          </div>
+                      </div>
+                    )}
+
+                    {isForgotPassword && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">New Password</label>
+                            <div className="relative group/input">
+                                <Lock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-black transition-colors duration-300" />
+                                <input 
+                                    type="password" 
+                                    placeholder="새로운 비밀번호를 입력해주세요"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    required={isForgotPassword}
+                                    className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90"
+                                />
+                            </div>
                         </div>
-                        <div className="relative group/input">
-                            <Lock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-black transition-colors duration-300" />
-                            <input 
-                                type="password" 
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90"
-                            />
-                        </div>
-                    </div>
+                    )}
 
                     <button 
                         type="submit"
@@ -151,23 +223,36 @@ export const LoginPage = () => {
                     >
                          <div className="absolute inset-0 bg-gradient-to-r from-stone-800 via-stone-600 to-stone-800 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
                         <span className="relative z-10 flex items-center justify-center gap-2 group-hover/btn:text-white transition-colors">
-                            {isLoading ? '처리 중...' : (isLogin ? '시작하기' : '회원가입 완료')}
+                            {isLoading ? '처리 중...' : (isForgotPassword ? '비밀번호 변경' : (isLogin ? '시작하기' : '회원가입 완료'))}
                             {!isLoading && <ArrowRight size={20} className="group-hover/btn:translate-x-1 transition-transform" />}
                         </span>
                     </button>
                 </form>
 
                 <div className="mt-8 text-center relative z-10">
-                    <p className="text-sm font-medium text-gray-500">
-                        {isLogin ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'} {' '}
-                        <button 
-                            type="button"
-                            onClick={() => { setIsLogin(!isLogin); setError(null); }}
-                            className="text-gray-900 hover:text-black font-bold transition-colors underline decoration-2 decoration-gray-200 underline-offset-4 hover:decoration-black"
-                        >
-                            {isLogin ? '회원가입' : '로그인'}
-                        </button>
-                    </p>
+                    {isForgotPassword ? (
+                      <p className="text-sm font-medium text-gray-500">
+                          기억나셨나요? {' '}
+                          <button 
+                              type="button"
+                              onClick={() => { setIsForgotPassword(false); setIsLogin(true); setError(null); }}
+                              className="text-gray-900 hover:text-black font-bold transition-colors underline decoration-2 decoration-gray-200 underline-offset-4 hover:decoration-black"
+                          >
+                              로그인으로 돌아가기
+                          </button>
+                      </p>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-500">
+                          {isLogin ? '계정이 없으신가요?' : '이미 계정이 있으신가요?'} {' '}
+                          <button 
+                              type="button"
+                              onClick={() => { setIsLogin(!isLogin); setError(null); }}
+                              className="text-gray-900 hover:text-black font-bold transition-colors underline decoration-2 decoration-gray-200 underline-offset-4 hover:decoration-black"
+                          >
+                              {isLogin ? '회원가입' : '로그인'}
+                          </button>
+                      </p>
+                    )}
                 </div>
             </div>
             

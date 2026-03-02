@@ -146,6 +146,24 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+app.post('/api/auth/reset-password', async (req, res) => {
+    const { email, username, newPassword } = req.body;
+    if (!email || !username || !newPassword) return res.status(400).json({ error: '이메일, 유저네임, 새 비밀번호가 모두 필요합니다.' });
+
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1 AND username = $2', [email, username]);
+        const user = result.rows[0];
+        if (!user) return res.status(404).json({ error: '입력하신 정보와 일치하는 계정을 찾을 수 없습니다.' });
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
+        res.json({ message: '비밀번호가 성공적으로 변경되었습니다.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: '비밀번호 초기화에 실패했습니다.' });
+    }
+});
+
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query('SELECT id, email, username FROM users WHERE id = $1', [req.user.userId]);
