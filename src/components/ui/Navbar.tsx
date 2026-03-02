@@ -25,20 +25,20 @@ export const Navbar = () => {
                 data-tutorial="navbar-dashboard"
             >
                 <LayoutGrid size={18} className="group-hover:text-black transition-colors" />
-                <span>대쉬보드</span>
+                <span className="hidden sm:inline">대쉬보드</span>
             </button>
             {isAuthenticated ? (
                 <>
                     <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group">
                         <UserCircle size={18} className="group-hover:text-black transition-colors" />
-                        <span>{user?.username || '마이페이지'}</span>
+                        <span className="hidden sm:inline">{user?.username || '마이페이지'}</span>
                     </button>
                     <button 
                         onClick={logout}
                         className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-95 group"
                     >
                         <LogOut size={18} />
-                        <span>로그아웃</span>
+                        <span className="hidden sm:inline">로그아웃</span>
                     </button>
                 </>
             ) : (
@@ -47,7 +47,7 @@ export const Navbar = () => {
                     className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group"
                 >
                     <UserCircle size={18} className="group-hover:text-black transition-colors" />
-                    <span>로그인</span>
+                    <span className="hidden sm:inline">로그인</span>
                 </button>
             )}
         </div>

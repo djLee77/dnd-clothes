@@ -8,7 +8,7 @@ import { useAssetStore } from '../../store/assetStore'
 
 export const Sidebar = () => {
   const { isSidebarOpen, toggleSidebar, isExpanded, toggleExpanded, assetLocation, setAssetLocation, transitionTo, setTransitionTo, selectedItemId, stageRef, setSelectedItemId } = useUiStore()
-  const { items, updateItem } = useSceneStore()
+  const { items, updateItem, addItem } = useSceneStore()
   const { scraps, fetchScraps, saveCurrentScrap, loadScrap, deleteScrap, isLoading } = useScrapStore()
   const { categories, assets, addCategory: storeAddCategory, deleteCategory: storeDeleteCategory, addAsset, deleteAsset: storeDeleteAsset, fetchData: fetchAssetData } = useAssetStore()
   
@@ -150,13 +150,13 @@ export const Sidebar = () => {
 
   return (
     <div 
-      className={`relative h-[calc(100vh-6rem)] mt-20 mr-4 mb-4 bg-white/70 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col pointer-events-auto border border-white/60 transition-all duration-500 ease-in-out animate-dramatic-slide-in-right ${isExpanded ? 'w-[45rem]' : 'w-80'}`}
+      className={`absolute sm:relative right-0 sm:right-auto z-40 h-[calc(100vh-6rem)] mt-20 sm:mr-4 mb-4 bg-white/90 sm:bg-white/70 backdrop-blur-xl rounded-l-[2rem] sm:rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col pointer-events-auto border border-white/60 transition-all duration-500 ease-in-out animate-dramatic-slide-in-right ${isExpanded ? 'w-full sm:w-[45rem]' : 'w-[85vw] sm:w-80'}`}
       data-tutorial="sidebar"
     >
       {/* Expand/Collapse Toggle Button */}
       <button
         onClick={toggleExpanded}
-        className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-12 bg-white/90 backdrop-blur-md border border-white/80 rounded-xl shadow-lg flex items-center justify-center text-gray-400 hover:text-black hover:scale-110 transition-all z-50 group"
+        className="absolute -left-4 sm:-left-4 top-1/2 -translate-y-1/2 w-8 h-12 bg-white/90 backdrop-blur-md border border-white/80 rounded-xl shadow-lg hidden sm:flex items-center justify-center text-gray-400 hover:text-black hover:scale-110 transition-all z-50 group"
         data-tutorial="sidebar-expand"
         title={isExpanded ? "축소하기" : "펼치기"}
       >
@@ -192,7 +192,7 @@ export const Sidebar = () => {
 
       <div className="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
         {selectedItem ? (
-           <div className={`space-y-5 animate-slide-up ${isExpanded ? 'grid grid-cols-2 gap-x-6 gap-y-2 content-start' : ''}`} key={selectedItem.id}>
+           <div className={`space-y-5 animate-slide-up ${isExpanded ? 'sm:grid sm:grid-cols-2 gap-x-6 gap-y-2 content-start' : ''}`} key={selectedItem.id}>
               <div className="opacity-0 animate-fade-in space-y-2" style={{ animationDelay: '0ms', animationFillMode: 'forwards' }}>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">이름</label>
                   <input 
@@ -228,7 +228,7 @@ export const Sidebar = () => {
                     href={selectedItem.siteUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className={`block w-full text-center py-3.5 bg-gradient-to-r from-gray-800 to-black text-white font-bold rounded-xl hover:shadow-lg hover:shadow-gray-500/25 hover:-translate-y-0.5 transition-all duration-300 animate-pop text-sm ${isExpanded ? 'col-span-2 mt-4' : ''}`}
+                    className={`block w-full text-center py-3.5 bg-gradient-to-r from-gray-800 to-black text-white font-bold rounded-xl hover:shadow-lg hover:shadow-gray-500/25 hover:-translate-y-0.5 transition-all duration-300 animate-pop text-sm ${isExpanded ? 'sm:col-span-2 mt-4' : ''}`}
                     style={{ animationDelay: '300ms' }}
                   >
                     사이트 방문
@@ -386,8 +386,25 @@ export const Sidebar = () => {
                                 {assets.filter(a => a.categoryId === category.id).map((asset) => (
                                     <div
                                         key={asset.id}
-                                        className="flex-shrink-0 w-32 relative group/asset p-3 bg-white rounded-2xl cursor-move shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 snap-start"
+                                        className="flex-shrink-0 w-28 sm:w-32 relative group/asset p-2 sm:p-3 bg-white rounded-2xl cursor-pointer sm:cursor-move shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 snap-start"
                                         draggable
+                                        onClick={() => {
+                                            addItem({
+                                                type: 'image',
+                                                x: window.innerWidth / 2 - 100,
+                                                y: window.innerHeight / 2 - 100,
+                                                width: 200,
+                                                height: 200,
+                                                fill: 'transparent',
+                                                rotation: 0,
+                                                scaleX: 1,
+                                                scaleY: 1,
+                                                src: asset.src,
+                                                name: asset.name,
+                                                price: asset.price,
+                                                siteUrl: asset.siteUrl
+                                            })
+                                        }}
                                         onDragStart={(e) => {
                                             e.dataTransfer.setData('type', 'image')
                                             e.dataTransfer.setData('src', asset.src)

@@ -1,10 +1,12 @@
 import { X, Layers, ChevronDown } from 'lucide-react'
 import { useUiStore } from '../../store/uiStore'
 import { useAssetStore } from '../../store/assetStore'
+import { useSceneStore } from '../../store/sceneStore'
 
 export const BottomAssetBar = () => {
   const { assetLocation, setAssetLocation, transitionTo, setTransitionTo } = useUiStore()
   const { categories, assets, deleteAsset } = useAssetStore()
+  const { addItem } = useSceneStore()
   
   if (assetLocation !== 'bottom' && transitionTo !== 'sidebar') return null
   
@@ -22,7 +24,7 @@ export const BottomAssetBar = () => {
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-3xl border-t border-white/60 shadow-[0_-20px_50px_rgb(0,0,0,0.15)] z-40 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col p-8 rounded-t-[3.5rem] h-[420px] ${transitionTo === 'sidebar' ? 'animate-slide-out-down' : 'animate-dramatic-slide-up'}`}
+      className={`fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-3xl border-t border-white/60 shadow-[0_-20px_50px_rgb(0,0,0,0.15)] z-40 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col p-4 sm:p-8 rounded-t-3xl sm:rounded-t-[3.5rem] h-[60vh] sm:h-[420px] ${transitionTo === 'sidebar' ? 'animate-slide-out-down' : 'animate-dramatic-slide-up'}`}
     >
       <div className="flex items-center justify-between mb-4 px-4">
         <div className="flex items-center gap-3">
@@ -46,10 +48,10 @@ export const BottomAssetBar = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto flex gap-6 px-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent items-start py-2">
+      <div className="flex-1 overflow-x-auto flex gap-4 sm:gap-6 px-2 sm:px-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent items-start py-2">
         {categories.map(category => (
-          <div key={category.id} className="flex-shrink-0 min-w-[420px] h-full flex flex-col">
-            <div className="flex items-center justify-between mb-3 px-4">
+          <div key={category.id} className="flex-shrink-0 w-[85vw] sm:min-w-[420px] h-full flex flex-col">
+            <div className="flex items-center justify-between mb-3 px-2 sm:px-4">
               <span className="font-extrabold text-sm text-gray-700">{category.name}</span>
               <span className="text-[10px] bg-gray-100 px-2.5 py-1 rounded-full text-gray-500 font-bold">
                 {assets.filter(a => a.categoryId === category.id).length} Items
@@ -59,9 +61,25 @@ export const BottomAssetBar = () => {
             <div className={`flex-1 bg-white/40 rounded-[2rem] p-4 flex gap-4 overflow-x-auto scrollbar-none snap-x snap-mandatory border border-white/60 shadow-inner transition-all duration-500`}>
                 {assets.filter(a => a.categoryId === category.id).map((asset) => (
                     <div
-                        key={asset.id}
-                        className={`flex-shrink-0 relative group/asset p-5 bg-white rounded-3xl cursor-move shadow-sm hover:shadow-2xl hover:-translate-y-3 transition-all duration-500 snap-start border border-gray-50 w-56 h-full`}
+                        className={`flex-shrink-0 relative group/asset p-4 sm:p-5 bg-white rounded-3xl cursor-pointer sm:cursor-move shadow-sm hover:shadow-2xl hover:-translate-y-2 sm:hover:-translate-y-3 transition-all duration-500 snap-start border border-gray-50 w-44 sm:w-56 h-full`}
                         draggable
+                        onClick={() => {
+                            addItem({
+                                type: 'image',
+                                x: window.innerWidth / 2 - 100,
+                                y: window.innerHeight / 2 - 100,
+                                width: 200,
+                                height: 200,
+                                fill: 'transparent',
+                                rotation: 0,
+                                scaleX: 1,
+                                scaleY: 1,
+                                src: asset.src,
+                                name: asset.name,
+                                price: asset.price,
+                                siteUrl: asset.siteUrl
+                            })
+                        }}
                         onDragStart={(e) => {
                             e.dataTransfer.setData('type', 'image')
                             e.dataTransfer.setData('src', asset.src)

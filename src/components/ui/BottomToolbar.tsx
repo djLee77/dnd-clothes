@@ -40,7 +40,7 @@ export const BottomToolbar = () => {
     return (
         <div className={`flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 ${assetLocation === 'bottom' ? 'animate-slide-down origin-top' : 'animate-slide-up origin-bottom'}`}>
             {/* Selection Info (Optional) */}
-            <div className="flex items-center gap-3 px-3 border-r border-gray-200">
+            <div className="hidden sm:flex items-center gap-3 px-3 border-r border-gray-200">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Selected</span>
                 <span className="text-sm font-bold text-gray-800 truncate max-w-[120px]">{selectedItem.name || 'Untitled'}</span>
                 <button 
