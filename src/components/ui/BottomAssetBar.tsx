@@ -24,9 +24,9 @@ export const BottomAssetBar = () => {
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-3xl border-t border-white/60 shadow-[0_-20px_50px_rgb(0,0,0,0.15)] z-40 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col p-4 sm:p-8 rounded-t-3xl sm:rounded-t-[3.5rem] h-[60vh] sm:h-[420px] ${transitionTo === 'sidebar' ? 'animate-slide-out-down' : 'animate-dramatic-slide-up'}`}
+      className={`fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-3xl border-t border-white/60 shadow-[0_-20px_50px_rgb(0,0,0,0.15)] z-[60] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col p-4 sm:p-8 rounded-t-3xl sm:rounded-t-[3.5rem] h-[60vh] sm:h-[420px] ${transitionTo === 'sidebar' ? 'animate-slide-out-down' : 'animate-dramatic-slide-up'}`}
     >
-      <div className="flex items-center justify-between mb-4 px-4">
+      <div className="relative flex items-center justify-between mb-4 px-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-black text-white rounded-2xl flex items-center justify-center">
             <Layers size={20} />
@@ -37,7 +37,7 @@ export const BottomAssetBar = () => {
           </div>
         </div>
         
-        <div className="flex items-center">
+        <div className="absolute left-1/2 -translate-x-1/2">
           <button 
             onClick={handleClose}
             className="w-14 h-11 bg-white shadow-lg border border-gray-100 flex flex-col items-center justify-center text-gray-400 hover:text-black hover:scale-110 active:scale-95 rounded-2xl transition-all group"
