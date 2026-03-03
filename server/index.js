@@ -6,9 +6,11 @@ import pkg from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 dotenv.config();
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
@@ -17,20 +19,6 @@ const __dirname = path.dirname(__filename);
 // Very simple in-memory store for verification codes
 // In production, this should ideally be in Redis or DB with an expiration time
 const verificationCodes = new Map();
-
-// Configure Nodemailer transporter
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use TLS
-    auth: {
-        user: process.env.EMAIL_USER, // Your Gmail address
-        pass: process.env.EMAIL_PASS,  // Your Gmail App Password
-    },
-    tls: {
-        rejectUnauthorized: false
-    }
-});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -187,8 +175,8 @@ app.post('/api/auth/send-code', async (req, res) => {
 
         // Send Email
         const mailOptions = {
-            from: process.env.EMAIL_USER || 'no-reply@wardrobe.com',
-            to: email,
+            from: 'Wardrobe <onboarding@resend.dev>', // Resend's default free-tier sender
+            to: email, // Resend free tier only allows sending to the registered verify email, or the user's email if domain is verified. Note: user might need to verify their email in Resend dashboard if using free tier without a domain.
             subject: '[Wardrobe] 비밀번호 재설정 인증 코드',
             text: `안녕하세요.\n\n비밀번호 재설정을 위한 인증 코드는 다음과 같습니다:\n\n[ ${code} ]\n\n이 코드는 10분 동안 유효합니다.\n\n감사합니다.`,
             html: `
@@ -205,19 +193,24 @@ app.post('/api/auth/send-code', async (req, res) => {
         };
 
         // Try to send email. If Env vars are not set, just simulate it for development
-        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-            await transporter.sendMail(mailOptions);
+        if (process.env.RESEND_API_KEY) {
+            const { data, error } = await resend.emails.send(mailOptions);
+
+            if (error) {
+                console.error('Resend API Error:', error);
+                return res.status(500).json({ error: '이메일 발송에 실패했습니다. (게이트웨이 에러)' });
+            }
         } else {
             console.log(`\n\n[DEV MODE] Email simulation for ${email}`);
             console.log(`[DEV MODE] Verification Code: ${code}\n\n`);
-            // We won't actually fail if EMAIL_USER wasn't set locally, to allow development testing
+            // We won't actually fail if RESEND_API_KEY wasn't set locally, to allow development testing
         }
 
         res.json({ message: '인증 코드가 이메일로 발송되었습니다.' });
 
     } catch (err) {
         console.error('Email send error:', err);
-        res.status(500).json({ error: '이메일 발송에 실패했습니다. (서버 설정 확인 필요)' });
+        res.status(500).json({ error: '이메일 발송 과정에서 오류가 발생했습니다.' });
     }
 });
 
