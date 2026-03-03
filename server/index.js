@@ -20,7 +20,9 @@ const verificationCodes = new Map();
 
 // Configure Nodemailer transporter
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER, // Your Gmail address
         pass: process.env.EMAIL_PASS,  // Your Gmail App Password
