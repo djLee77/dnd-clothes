@@ -366,7 +366,7 @@ app.use('/api/*', (req, res) => {
 });
 
 // Serve frontend build in production
-const frontendBuildPath = path.join(__dirname, '../dist');
+const frontendBuildPath = path.join(__dirname, '../client/dist');
 app.use(express.static(frontendBuildPath));
 
 app.get('*', (req, res) => {
