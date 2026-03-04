@@ -6,15 +6,8 @@ import pkg from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// Using Brevo instead of Resend and Nodemailer to bypass Render's SMTP blocks
-import brevo from '@getbrevo/brevo';
 
 dotenv.config();
-
-let emailAPI = new brevo.TransactionalEmailsApi();
-if (process.env.BREVO_API_KEY) {
-    emailAPI.authentications.apiKey.apiKey = process.env.BREVO_API_KEY;
-}
 const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -190,21 +183,34 @@ app.post('/api/auth/send-code', async (req, res) => {
         `;
 
         if (process.env.BREVO_API_KEY && process.env.SENDER_EMAIL) {
-            // Send via Brevo
-            const sendSmtpEmail = new brevo.SendSmtpEmail();
-            sendSmtpEmail.subject = '[Wardrobe] 비밀번호 재설정 인증 코드';
-            sendSmtpEmail.htmlContent = htmlContent;
-            sendSmtpEmail.sender = {
-                name: "Wardrobe",
-                email: process.env.SENDER_EMAIL,
-            };
-            sendSmtpEmail.to = [{ email: email }];
-
+            // Send via Brevo using Native fetch API
             try {
-                await emailAPI.sendTransacEmail(sendSmtpEmail);
+                const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json',
+                        'api-key': process.env.BREVO_API_KEY,
+                        'content-type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sender: {
+                            name: "Wardrobe",
+                            email: process.env.SENDER_EMAIL
+                        },
+                        to: [{ email: email }],
+                        subject: '[Wardrobe] 비밀번호 재설정 인증 코드',
+                        htmlContent: htmlContent
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Brevo API Error:', errorData);
+                    return res.status(500).json({ error: '이메일 발송에 실패했습니다. (게이트웨이 에러)' });
+                }
             } catch (error) {
-                console.error('Brevo API Error:', error);
-                return res.status(500).json({ error: '이메일 발송에 실패했습니다. (게이트웨이 에러)' });
+                console.error('Brevo Request Error:', error);
+                return res.status(500).json({ error: '이메일 발송에 실패했습니다. (네트워크 에러)' });
             }
         } else {
             console.log(`\n\n[DEV MODE] Email simulation for ${email}`);
