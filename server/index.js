@@ -7,11 +7,27 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Nodemailer transporter setup with explicit SMTP/TLS configuration
+// This attempts to bypass Render's potential outbound blocks on standard ports
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Use TLS (true for port 465)
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    },
+    // Adding timeout and idle configuration helps prevent silent hangs
+    connectionTimeout: 10000,
+    greetingTimeout: 5000,
+    socketTimeout: 20000,
+});
 const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -173,28 +189,37 @@ app.post('/api/auth/send-code', async (req, res) => {
             expiresAt: Date.now() + 10 * 60 * 1000
         });
 
-        // Send Email
-        const mailOptions = {
-            from: 'Wardrobe <onboarding@resend.dev>', // Resend's default free-tier sender
-            to: email, // Resend free tier only allows sending to the registered verify email, or the user's email if domain is verified. Note: user might need to verify their email in Resend dashboard if using free tier without a domain.
-            subject: '[Wardrobe] 비밀번호 재설정 인증 코드',
-            text: `안녕하세요.\n\n비밀번호 재설정을 위한 인증 코드는 다음과 같습니다:\n\n[ ${code} ]\n\n이 코드는 10분 동안 유효합니다.\n\n감사합니다.`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                    <h2 style="color: #333; text-align: center;">비밀번호 재설정 안내</h2>
-                    <p style="color: #555; line-height: 1.6;">안녕하세요.</p>
-                    <p style="color: #555; line-height: 1.6;">요청하신 비밀번호 재설정을 위한 6자리 인증 코드입니다.</p>
-                    <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #000; margin: 20px 0; border-radius: 5px;">
-                        ${code}
-                    </div>
-                    <p style="color: #888; font-size: 13px; text-align: center;">이 코드는 발급 후 10분 동안만 유효합니다.</p>
+        // Email html content
+        const htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                <h2 style="color: #333; text-align: center;">비밀번호 재설정 안내</h2>
+                <p style="color: #555; line-height: 1.6;">안녕하세요.</p>
+                <p style="color: #555; line-height: 1.6;">요청하신 비밀번호 재설정을 위한 6자리 인증 코드입니다.</p>
+                <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #000; margin: 20px 0; border-radius: 5px;">
+                    ${code}
                 </div>
-            `
-        };
+                <p style="color: #888; font-size: 13px; text-align: center;">이 코드는 발급 후 10분 동안만 유효합니다.</p>
+            </div>
+        `;
 
-        // Try to send email. If Env vars are not set, just simulate it for development
-        if (process.env.RESEND_API_KEY) {
-            const { data, error } = await resend.emails.send(mailOptions);
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+            // Send via Nodemailer
+            await transporter.sendMail({
+                from: `"Wardrobe" <${process.env.EMAIL_USER}>`,
+                to: email,
+                subject: '[Wardrobe] 비밀번호 재설정 인증 코드',
+                text: `안녕하세요.\n\n비밀번호 재설정을 위한 인증 코드는 다음과 같습니다:\n\n[ ${code} ]\n\n이 코드는 10분 동안 유효합니다.\n\n감사합니다.`,
+                html: htmlContent
+            });
+        } else if (process.env.RESEND_API_KEY) {
+            // Fallback to Resend (free tier requires verified domain or specific email)
+            const { error } = await resend.emails.send({
+                from: 'Wardrobe <onboarding@resend.dev>',
+                to: email,
+                subject: '[Wardrobe] 비밀번호 재설정 인증 코드',
+                text: `안녕하세요.\n\n비밀번호 재설정을 위한 인증 코드는 다음과 같습니다:\n\n[ ${code} ]\n\n이 코드는 10분 동안 유효합니다.\n\n감사합니다.`,
+                html: htmlContent
+            });
 
             if (error) {
                 console.error('Resend API Error:', error);
@@ -203,7 +228,6 @@ app.post('/api/auth/send-code', async (req, res) => {
         } else {
             console.log(`\n\n[DEV MODE] Email simulation for ${email}`);
             console.log(`[DEV MODE] Verification Code: ${code}\n\n`);
-            // We won't actually fail if RESEND_API_KEY wasn't set locally, to allow development testing
         }
 
         res.json({ message: '인증 코드가 이메일로 발송되었습니다.' });

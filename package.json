@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter \"./**\" run \"/^dev/\"",
     "build": "pnpm --filter dnd-closet-client build",
-    "start": "pnpm --filter dnd-closet-server start"
+    "start": "pnpm --filter dnd-closet-server start",
+    "stop": "taskkill /F /IM node.exe"
   }
 }
