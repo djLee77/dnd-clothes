@@ -166,7 +166,7 @@ app.post('/api/auth/send-code', async (req, res) => {
         // Store code with expiration (10 minutes)
         verificationCodes.set(email, {
             code,
-            expiresAt: Date.now() + 10 * 60 * 1000
+            expiresAt: Date.now() + 3 * 60 * 1000
         });
 
         // Email html content
@@ -178,7 +178,7 @@ app.post('/api/auth/send-code', async (req, res) => {
                 <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #000; margin: 20px 0; border-radius: 5px;">
                     ${code}
                 </div>
-                <p style="color: #888; font-size: 13px; text-align: center;">이 코드는 발급 후 10분 동안만 유효합니다.</p>
+                <p style="color: #888; font-size: 13px; text-align: center;">이 코드는 발급 후 3분 동안만 유효합니다.</p>
             </div>
         `;
 
@@ -213,6 +213,10 @@ app.post('/api/auth/send-code', async (req, res) => {
                 return res.status(500).json({ error: '이메일 발송에 실패했습니다. (네트워크 에러)' });
             }
         } else {
+            if (process.env.NODE_ENV === 'production') {
+                console.error('CRITICAL: BREVO_API_KEY or SENDER_EMAIL is not set in production environment!');
+                return res.status(500).json({ error: '이메일 발송 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.' });
+            }
             console.log(`\n\n[DEV MODE] Email simulation for ${email}`);
             console.log(`\n\n[DEV MODE] Note: BREVO_API_KEY and SENDER_EMAIL must be set in .env to send real emails.`);
             console.log(`[DEV MODE] Verification Code: ${code}\n\n`);

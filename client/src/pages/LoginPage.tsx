@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Shirt, ArrowRight, Mail, Lock, Stars, User, AlertCircle } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { Shirt, ArrowRight, Mail, Lock, Stars, User, AlertCircle, Timer, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { GridBackground } from '../components/ui/GridBackground'
 import { ParticleBackground } from '../components/ui/ParticleBackground'
@@ -17,6 +17,8 @@ export const LoginPage = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(0)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   
   const navigate = useNavigate()
   const setAuth = useAuthStore(state => state.setAuth)
@@ -24,6 +26,36 @@ export const LoginPage = () => {
   useEffect(() => {
     setIsLoaded(true)
   }, [])
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [])
+
+  // Start countdown timer
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    setTimeLeft(3 * 60) // 3 minutes in seconds
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }, [])
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  }
+
+  const isCodeExpired = isCodeSent && timeLeft === 0
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,6 +81,7 @@ export const LoginPage = () => {
               
               alert('인증 코드가 발송되었습니다. 이메일을 확인해주세요.')
               setIsCodeSent(true)
+              startTimer()
           } catch (err: any) {
               setError(err.message)
           } finally {
@@ -178,18 +211,59 @@ export const LoginPage = () => {
 
                     {isForgotPassword && isCodeSent && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Verification Code</label>
+                            <div className="flex justify-between items-center ml-1">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Verification Code</label>
+                                <div className="flex items-center gap-1.5">
+                                    <Timer size={14} className={`${timeLeft <= 60 ? 'text-red-500' : 'text-gray-400'}`} />
+                                    <span className={`text-xs font-bold tabular-nums tracking-wide ${
+                                        timeLeft === 0 ? 'text-red-500' : timeLeft <= 60 ? 'text-red-500 animate-pulse' : 'text-gray-500'
+                                    }`}>
+                                        {timeLeft === 0 ? '만료됨' : formatTime(timeLeft)}
+                                    </span>
+                                </div>
+                            </div>
                             <div className="relative group/input">
                                 <Stars size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within/input:text-black transition-colors duration-300" />
                                 <input 
                                     type="text" 
-                                    placeholder="이메일로 발송된 6자리 코드"
+                                    placeholder={isCodeExpired ? '코드가 만료되었습니다' : '이메일로 발송된 6자리 코드'}
                                     value={code}
                                     onChange={(e) => setCode(e.target.value)}
-                                    required={isCodeSent}
-                                    className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90"
+                                    required={isCodeSent && !isCodeExpired}
+                                    disabled={isCodeExpired}
+                                    className="w-full bg-white/70 border-2 border-transparent rounded-2xl py-4 pl-14 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-black/20 focus:shadow-lg focus:shadow-black/5 transition-all duration-300 hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
+                            {isCodeExpired && (
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        setError(null)
+                                        setIsLoading(true)
+                                        try {
+                                            const response = await fetch('/api/auth/send-code', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ email })
+                                            })
+                                            const data = await response.json()
+                                            if (!response.ok) throw new Error(data.error || '코드 재발송에 실패했습니다.')
+                                            alert('새 인증 코드가 발송되었습니다.')
+                                            setCode('')
+                                            startTimer()
+                                        } catch (err: any) {
+                                            setError(err.message)
+                                        } finally {
+                                            setIsLoading(false)
+                                        }
+                                    }}
+                                    disabled={isLoading}
+                                    className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-gray-600 hover:text-black py-2 rounded-xl hover:bg-white/50 transition-all duration-300 disabled:opacity-50"
+                                >
+                                    <RefreshCw size={14} />
+                                    인증 코드 재발송
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -267,7 +341,7 @@ export const LoginPage = () => {
                           기억나셨나요? {' '}
                           <button 
                               type="button"
-                              onClick={() => { setIsForgotPassword(false); setIsCodeSent(false); setIsLogin(true); setError(null); }}
+                              onClick={() => { setIsForgotPassword(false); setIsCodeSent(false); setIsLogin(true); setError(null); setTimeLeft(0); if (timerRef.current) clearInterval(timerRef.current); }}
                               className="text-gray-900 hover:text-black font-bold transition-colors underline decoration-2 decoration-gray-200 underline-offset-4 hover:decoration-black"
                           >
                               로그인으로 돌아가기
