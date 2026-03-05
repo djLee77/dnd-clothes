@@ -5,7 +5,6 @@ import {
   Filter, ChevronDown, User, Sparkles, ArrowRight, Flame,
   BookOpen, Star
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 
 type SortType = 'latest' | 'popular' | 'trending'
 
@@ -104,7 +103,6 @@ const CATEGORY_FILTERS = [
 ]
 
 export const CommunityPage = () => {
-  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortType>('latest')
   const [activeCategory, setActiveCategory] = useState('all')
