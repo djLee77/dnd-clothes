@@ -27,7 +27,7 @@ export const DashboardPage = () => {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                     <div>
-                        <h1 className="text-4xl font-black text-black tracking-tight mb-2">My Scraps</h1>
+                        <h1 className="text-4xl font-black text-black tracking-tight mb-2">MY SCRAPS</h1>
                         <p className="text-gray-400 font-medium">저장된 코디 보드들을 관리하세요.</p>
                     </div>
                     
@@ -41,7 +41,7 @@ export const DashboardPage = () => {
                             />
                         </div>
                         <button 
-                            onClick={() => navigate('/')}
+                            onClick={() => navigate('/editor')}
                             className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-2xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-gray-200"
                         >
                             <Plus size={18} />
@@ -60,7 +60,7 @@ export const DashboardPage = () => {
                         {scraps.map(scrap => (
                             <div 
                                 key={scrap.id}
-                                onClick={() => navigate('/')} 
+                                onClick={() => navigate('/editor')} 
                                 className="group relative bg-white rounded-[2.5rem] border border-gray-100/50 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_30px_60px_rgba(0,0,0,0.12)] hover:-translate-y-3 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden cursor-pointer"
                             >
                                 {/* Thumbnail Area */}
@@ -128,7 +128,7 @@ export const DashboardPage = () => {
                         <h3 className="text-xl font-bold text-gray-800 mb-2">저장된 보드가 없습니다.</h3>
                         <p className="text-gray-400 mb-8">첫 번째 코디 스크랩을 만들어보세요!</p>
                         <button 
-                            onClick={() => navigate('/')}
+                            onClick={() => navigate('/editor')}
                             className="px-8 py-3.5 bg-black text-white rounded-2xl font-bold shadow-xl shadow-gray-200 hover:scale-105 active:scale-95 transition-all"
                         >
                             시작하기

@@ -1,27 +1,43 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { MainCanvas } from './components/canvas/MainCanvas'
 import { MainLayout } from './components/layout/MainLayout'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { LoginPage } from './pages/LoginPage'
 import { useAuthStore } from './store/authStore'
 import { DashboardPage } from './pages/DashboardPage'
+import { CommunityPage } from './pages/CommunityPage'
+import { MobileDesktopOnly } from './components/ui/MobileDesktopOnly'
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Main: Community page for both desktop and mobile */}
         <Route path="/" element={
           <ProtectedRoute>
-            <MainLayout>
-              <MainCanvas />
-            </MainLayout>
+            <CommunityPage />
           </ProtectedRoute>
         } />
+        {/* Canvas editor: desktop only */}
+        <Route path="/editor" element={
+          <ProtectedRoute>
+            <DesktopOnlyRoute>
+              <MainLayout>
+                <MainCanvas />
+              </MainLayout>
+            </DesktopOnlyRoute>
+          </ProtectedRoute>
+        } />
+        {/* Dashboard: desktop only */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <DashboardPage />
+            <DesktopOnlyRoute>
+              <DashboardPage />
+            </DesktopOnlyRoute>
           </ProtectedRoute>
         } />
+        {/* Redirect legacy /community to / */}
+        <Route path="/community" element={<Navigate to="/" replace />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>
     </Router>
@@ -35,6 +51,30 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
   
+  return <>{children}</>;
+};
+
+/**
+ * Shows MobileDesktopOnly screen on mobile devices (< 768px).
+ * Desktop-only features like canvas editor and dashboard are not
+ * usable on small screens due to drag-and-drop limitations.
+ */
+const DesktopOnlyRoute = ({ children }: { children: React.ReactNode }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mql.matches);
+
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
+  if (isMobile) {
+    return <MobileDesktopOnly />;
+  }
+
   return <>{children}</>;
 };
 
