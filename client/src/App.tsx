@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage'
 import { useAuthStore } from './store/authStore'
 import { DashboardPage } from './pages/DashboardPage'
 import { CommunityPage } from './pages/CommunityPage'
+import { CreatePostPage } from './pages/CreatePostPage'
 import { MobileDesktopOnly } from './components/ui/MobileDesktopOnly'
 
 function App() {
@@ -16,6 +17,12 @@ function App() {
         <Route path="/" element={
           <ProtectedRoute>
             <CommunityPage />
+          </ProtectedRoute>
+        } />
+        {/* Create post: both desktop and mobile */}
+        <Route path="/create-post" element={
+          <ProtectedRoute>
+            <CreatePostPage />
           </ProtectedRoute>
         } />
         {/* Canvas editor: desktop only */}
