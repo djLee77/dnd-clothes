@@ -3,6 +3,7 @@ import { Navbar } from '../components/ui/Navbar'
 import { useNavigate } from 'react-router-dom'
 import { useScrapStore, Scrap } from '../store/scrapStore'
 import { useAuthStore } from '../store/authStore'
+import { usePostStore } from '../store/postStore'
 import {
   ArrowLeft, Sparkles, Image as ImageIcon, X, Check,
   Layout, Calendar, ChevronDown, Hash, Type, AlignLeft,
@@ -13,6 +14,7 @@ export const CreatePostPage = () => {
   const navigate = useNavigate()
   const { scraps, fetchScraps, isLoading: scrapsLoading } = useScrapStore()
   const { user } = useAuthStore()
+  const { createPost } = usePostStore()
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -79,9 +81,8 @@ export const CreatePostPage = () => {
     setError(null)
 
     try {
-      // For now, simulate a post submission
-      // In the future, this would call a backend API like POST /api/posts
-      await new Promise(resolve => setTimeout(resolve, 1200))
+      const thumbnail = selectedScraps.length > 0 ? (selectedScraps[0].thumbnail || null) : null
+      await createPost(title, content, tags, selectedScrapIds, thumbnail)
 
       // Navigate back to community page after successful submission
       navigate('/')

@@ -6,6 +6,7 @@ import { useUiStore } from '../../store/uiStore'
 import { GridBackground } from '../ui/GridBackground'
 import { URLImage } from './URLImage'
 import { ItemFloatingToolbar } from './ItemFloatingToolbar'
+import { ImageCropModal } from './ImageCropModal'
 export const MainCanvas = () => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
@@ -15,6 +16,11 @@ export const MainCanvas = () => {
   const stageRef = useRef<any>(null)
   const transformerRef = useRef<any>(null)
   const [toolbarPosition, setToolbarPosition] = useState<{x: number, y: number} | null>(null)
+
+  // Crop Modal State
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false)
+  const [croppingImageUrl, setCroppingImageUrl] = useState('')
+  const [croppingItemId, setCroppingItemId] = useState<string | null>(null)
 
   useEffect(() => {
     if (stageRef.current) {
@@ -279,8 +285,40 @@ export const MainCanvas = () => {
           y={toolbarPosition.y}
           isVisible={true}
           onDelete={() => setSelectedItemId(null)}
+          onCropClick={() => {
+            const item = items.find(i => i.id === selectedItemId)
+            if (item && item.type === 'image' && item.src) {
+              setCroppingImageUrl(item.src)
+              setCroppingItemId(item.id)
+              setIsCropModalOpen(true)
+            }
+          }}
         />
       )}
+
+      {/* Image Crop Modal */}
+      <ImageCropModal 
+        isOpen={isCropModalOpen}
+        imageUrl={croppingImageUrl}
+        onClose={() => {
+          setIsCropModalOpen(false)
+          setCroppingImageUrl('')
+          setCroppingItemId(null)
+        }}
+        onCropComplete={(croppedBase64) => {
+          if (croppingItemId) {
+            updateItem(croppingItemId, { 
+                src: croppedBase64,
+                // Reset scale to 1 so the newly cropped image dimensions are properly matched
+                scaleX: 1, 
+                scaleY: 1 
+            })
+          }
+          setIsCropModalOpen(false)
+          setCroppingImageUrl('')
+          setCroppingItemId(null)
+        }}
+      />
     </div>
   )
 }

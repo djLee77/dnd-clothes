@@ -123,11 +123,73 @@ export const Sidebar = () => {
             
             try {
                 console.log('Attempting to generate thumbnail...')
-                thumbnail = stageRef.toDataURL({
-                    pixelRatio: 0.4, // Lower quality for dashboard preview
-                    mimeType: 'image/jpeg',
-                    quality: 0.7
+                
+                // Store current transform
+                const oldScale = stageRef.scale()
+                const oldPos = stageRef.position()
+                
+                // Reset transform temporarily to get accurate bounds and full-res crop
+                stageRef.scale({ x: 1, y: 1 })
+                stageRef.position({ x: 0, y: 0 })
+                stageRef.batchDraw()
+
+                // Get bounding box of the items in the main layer
+                const layer = stageRef.getLayers()[0]
+                const rect = layer.getClientRect({ skipTransform: false })
+                
+                // Add padding to crop bounds (40px)
+                const padding = 40
+                const cropParams = {
+                    x: rect.width === 0 ? 0 : rect.x - padding,
+                    y: rect.height === 0 ? 0 : rect.y - padding,
+                    width: rect.width === 0 ? stageRef.width() : rect.width + padding * 2,
+                    height: rect.height === 0 ? stageRef.height() : rect.height + padding * 2,
+                }
+
+                // Capture region as PNG (preserves transparency)
+                const tempDataUrl = stageRef.toDataURL({
+                    x: cropParams.x,
+                    y: cropParams.y,
+                    width: cropParams.width,
+                    height: cropParams.height,
+                    pixelRatio: 1,
+                    mimeType: 'image/png'
                 })
+
+                // Restore transform
+                stageRef.scale(oldScale)
+                stageRef.position(oldPos)
+                stageRef.batchDraw()
+
+                // Draw onto an off-screen canvas with a solid white background
+                const img = new Image()
+                img.src = tempDataUrl
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve
+                    img.onerror = reject
+                })
+
+                const canvas = document.createElement('canvas')
+                // Scale down slightly for dashboard if it's too large, but preserve aspect ratio
+                const MAX_SIZE = 800
+                const scale = Math.min(MAX_SIZE / img.width, MAX_SIZE / img.height, 1)
+                
+                canvas.width = img.width * scale
+                canvas.height = img.height * scale
+
+                const ctx = canvas.getContext('2d')
+                if (ctx) {
+                    // Fill white background
+                    ctx.fillStyle = '#ffffff'
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+                    
+                    // Draw the captured PNG over it
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+                    
+                    // Extract as high-quality JPEG
+                    thumbnail = canvas.toDataURL('image/jpeg', 0.85)
+                }
+
                 console.log('Thumbnail generated, length:', thumbnail.length)
             } catch (e) {
                 console.error('Thumbnail generation failed:', e)

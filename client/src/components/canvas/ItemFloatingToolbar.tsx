@@ -1,5 +1,5 @@
 import React from 'react'
-import { BringToFront, SendToBack, MoveUp, MoveDown, Trash2 } from 'lucide-react'
+import { BringToFront, SendToBack, MoveUp, MoveDown, Trash2, Crop } from 'lucide-react'
 import { useSceneStore } from '../../store/sceneStore'
 
 interface ItemFloatingToolbarProps {
@@ -8,9 +8,10 @@ interface ItemFloatingToolbarProps {
   y: number
   isVisible: boolean
   onDelete?: () => void
+  onCropClick?: () => void
 }
 
-export const ItemFloatingToolbar: React.FC<ItemFloatingToolbarProps> = ({ itemId, x, y, isVisible, onDelete }) => {
+export const ItemFloatingToolbar: React.FC<ItemFloatingToolbarProps> = ({ itemId, x, y, isVisible, onDelete, onCropClick }) => {
   const { bringToFront, sendToBack, moveForward, moveBackward, removeItem } = useSceneStore()
 
   if (!isVisible) return null
@@ -19,6 +20,11 @@ export const ItemFloatingToolbar: React.FC<ItemFloatingToolbarProps> = ({ itemId
     e.stopPropagation()
     removeItem(itemId)
     onDelete?.()
+  }
+
+  const handleCrop = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onCropClick?.()
   }
 
   return (
@@ -30,6 +36,14 @@ export const ItemFloatingToolbar: React.FC<ItemFloatingToolbarProps> = ({ itemId
         transform: 'translateX(-100%) translateX(20px)' // Align right edge with some padding
       }}
     >
+      <button
+        onClick={handleCrop}
+        className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600 hover:text-black transition-colors"
+        title="자르기"
+      >
+        <Crop size={16} />
+      </button>
+      <div className="w-px h-5 bg-gray-200 mx-0.5" />
       <button
         onClick={(e) => { e.stopPropagation(); bringToFront(itemId); }}
         className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600 hover:text-black transition-colors"

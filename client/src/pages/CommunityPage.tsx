@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Navbar } from '../components/ui/Navbar'
 import { 
@@ -7,95 +7,9 @@ import {
   BookOpen, Star
 } from 'lucide-react'
 
-type SortType = 'latest' | 'popular' | 'trending'
+import { usePostStore } from '../store/postStore'
 
-// Placeholder data for the community board
-const PLACEHOLDER_POSTS = [
-  {
-    id: 1,
-    title: '봄 맞이 파스텔 톤 코디 모음 🌸',
-    author: 'style_queen',
-    authorAvatar: null,
-    preview: '이번 봄에 도전해볼만한 파스텔 코디 조합들을 정리해봤어요. 라벤더, 민트, 베이비핑크 중심으로!',
-    thumbnail: null,
-    likes: 128,
-    comments: 34,
-    views: 892,
-    tags: ['봄코디', '파스텔', '데일리룩'],
-    createdAt: new Date('2026-03-05'),
-    isTrending: true,
-  },
-  {
-    id: 2,
-    title: '미니멀리스트를 위한 캡슐 워드로브 가이드',
-    author: 'minimal_closet',
-    authorAvatar: null,
-    preview: '10벌로 한 달 코디 완성하기! 꼭 필요한 기본 아이템 리스트와 조합법을 공유합니다.',
-    thumbnail: null,
-    likes: 256,
-    comments: 67,
-    views: 1543,
-    tags: ['미니멀', '캡슐워드로브', '가이드'],
-    createdAt: new Date('2026-03-04'),
-    isTrending: true,
-  },
-  {
-    id: 3,
-    title: '출근룩 고민 끝! 오피스 코디 스크랩',
-    author: 'office_chic',
-    authorAvatar: null,
-    preview: '매일 아침 뭐 입을지 고민되시는 분들을 위해 일주일 오피스룩을 스크랩해봤습니다.',
-    thumbnail: null,
-    likes: 89,
-    comments: 22,
-    views: 567,
-    tags: ['출근룩', '오피스', '직장인'],
-    createdAt: new Date('2026-03-03'),
-    isTrending: false,
-  },
-  {
-    id: 4,
-    title: '빈티지 무드 코디 컬렉션 🎞️',
-    author: 'retro_vibes',
-    authorAvatar: null,
-    preview: '요즘 핫한 빈티지/레트로 무드 코디를 쭉 모아봤어요. Y2K부터 뉴진스 스타일까지!',
-    thumbnail: null,
-    likes: 175,
-    comments: 41,
-    views: 1120,
-    tags: ['빈티지', '레트로', 'Y2K'],
-    createdAt: new Date('2026-03-02'),
-    isTrending: true,
-  },
-  {
-    id: 5,
-    title: '커플 매칭 코디 아이디어 💕',
-    author: 'couple_style',
-    authorAvatar: null,
-    preview: '자연스럽게 맞추는 커플룩 스크랩입니다. 쌍둥이룩 말고 컬러/무드 매칭 위주예요.',
-    thumbnail: null,
-    likes: 203,
-    comments: 55,
-    views: 980,
-    tags: ['커플룩', '매칭코디', '데이트'],
-    createdAt: new Date('2026-03-01'),
-    isTrending: false,
-  },
-  {
-    id: 6,
-    title: '가성비 좋은 데일리룩 브랜드 추천',
-    author: 'budget_fashion',
-    authorAvatar: null,
-    preview: '학생, 사회초년생도 부담없는 가격대의 브랜드들을 정리해봤어요. 퀄리티 대비 가격이 좋은 곳만!',
-    thumbnail: null,
-    likes: 312,
-    comments: 89,
-    views: 2100,
-    tags: ['가성비', '브랜드추천', '데일리'],
-    createdAt: new Date('2026-02-28'),
-    isTrending: true,
-  },
-]
+type SortType = 'latest' | 'popular' | 'trending'
 
 const CATEGORY_FILTERS = [
   { label: '전체', value: 'all', icon: BookOpen },
@@ -105,12 +19,19 @@ const CATEGORY_FILTERS = [
 
 export const CommunityPage = () => {
   const navigate = useNavigate()
+  const { posts, fetchPosts } = usePostStore()
+
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortType>('latest')
   const [activeCategory, setActiveCategory] = useState('all')
   const [showSortDropdown, setShowSortDropdown] = useState(false)
 
-  const formatDate = (date: Date) => {
+  useEffect(() => {
+    fetchPosts()
+  }, [fetchPosts])
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
     const now = new Date()
     const diff = now.getTime() - date.getTime()
     const hours = Math.floor(diff / (1000 * 60 * 60))
@@ -127,15 +48,16 @@ export const CommunityPage = () => {
     return num.toString()
   }
 
-  const filteredPosts = PLACEHOLDER_POSTS
+  const filteredPosts = posts
     .filter(post => {
-      if (activeCategory === 'trending') return post.isTrending
+      // Assuming posts with > 100 views are trending, just to have mock logic with real data
+      if (activeCategory === 'trending') return post.views > 100
       return true
     })
     .sort((a, b) => {
       if (sortBy === 'popular') return b.likes - a.likes
       if (sortBy === 'trending') return b.views - a.views
-      return b.createdAt.getTime() - a.createdAt.getTime()
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
     .filter(post => {
       if (!searchQuery) return true
@@ -256,10 +178,14 @@ export const CommunityPage = () => {
                 {/* Thumbnail */}
                 <div className="w-56 min-h-[180px] bg-gradient-to-br from-gray-50 to-gray-100/50 relative flex items-center justify-center shrink-0 overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-violet-50/50 via-transparent to-indigo-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  <div className="relative z-10 w-16 h-16 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-center text-gray-200 group-hover:text-violet-500 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-gray-50">
-                    <BookOpen size={28} strokeWidth={1.5} />
+                  <div className="relative z-10 w-16 h-16 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-center text-gray-200 group-hover:text-violet-500 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-gray-50 overflow-hidden">
+                    {post.thumbnail ? (
+                      <img src={post.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
+                    ) : (
+                      <BookOpen size={28} strokeWidth={1.5} />
+                    )}
                   </div>
-                  {post.isTrending && (
+                  {post.views > 100 && (
                     <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[10px] font-black uppercase tracking-wider rounded-full shadow-lg">
                       <Flame size={12} />
                       Hot
@@ -289,7 +215,7 @@ export const CommunityPage = () => {
                     
                     {/* Preview */}
                     <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 font-medium">
-                      {post.preview}
+                      {post.content.slice(0, 150)}
                     </p>
                   </div>
 
@@ -301,7 +227,7 @@ export const CommunityPage = () => {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-gray-700">{post.author}</p>
-                        <p className="text-[11px] text-gray-300 font-medium">{formatDate(post.createdAt)}</p>
+                        <p className="text-[11px] text-gray-300 font-medium">{formatDate(post.created_at)}</p>
                       </div>
                     </div>
 
@@ -336,10 +262,10 @@ export const CommunityPage = () => {
                     </div>
                     <div className="flex flex-col">
                       <span className="text-xs font-bold text-gray-900 leading-tight">{post.author}</span>
-                      <span className="text-[10px] text-gray-400 font-medium mt-0.5">{formatDate(post.createdAt)}</span>
+                      <span className="text-[10px] text-gray-400 font-medium mt-0.5">{formatDate(post.created_at)}</span>
                     </div>
                   </div>
-                  {post.isTrending && (
+                  {post.views > 100 && (
                     <div className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-orange-50 to-rose-50 text-rose-500 rounded-full">
                       <Flame size={10} />
                       <span className="text-[9px] font-black uppercase tracking-wider">Hot</span>
@@ -350,8 +276,12 @@ export const CommunityPage = () => {
                 {/* Feed Image (Thumbnail) */}
                 <div className="w-full aspect-[4/5] bg-gradient-to-br from-gray-50 to-gray-100 relative flex items-center justify-center overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-violet-50/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  <div className="relative z-10 w-16 h-16 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-center text-gray-300 group-hover:text-violet-500 group-hover:scale-110 transition-all duration-500 border border-gray-100">
-                    <BookOpen size={28} strokeWidth={1.5} />
+                  <div className="relative z-10 w-16 h-16 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-center text-gray-300 group-hover:text-violet-500 group-hover:scale-110 transition-all duration-500 border border-gray-100 overflow-hidden">
+                    {post.thumbnail ? (
+                      <img src={post.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
+                    ) : (
+                      <BookOpen size={28} strokeWidth={1.5} />
+                    )}
                   </div>
                 </div>
 
@@ -380,7 +310,7 @@ export const CommunityPage = () => {
                   </h2>
                   <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed font-medium">
                     <span className="font-bold text-gray-800 mr-2">{post.author}</span>
-                    {post.preview}
+                    {post.content.slice(0, 150)}
                   </p>
                   <div className="flex items-center gap-1.5 flex-wrap mt-2">
                     {post.tags.map(tag => (

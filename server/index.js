@@ -85,6 +85,28 @@ const pool = new Pool({
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS posts (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users (id),
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                tags TEXT,
+                thumbnail TEXT,
+                scrap_ids TEXT,
+                views INTEGER DEFAULT 0,
+                likes INTEGER DEFAULT 0,
+                comments INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        try {
+            await pool.query('ALTER TABLE posts ADD COLUMN thumbnail TEXT');
+        } catch (e) {
+            // Column already exists
+        }
         console.log('Connected to PostgreSQL database');
     } catch (err) {
         console.error('Database initialization failed:', err);
@@ -372,6 +394,38 @@ app.delete('/api/assets/:id', authenticateToken, async (req, res) => {
         res.json({ message: 'Asset deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete asset' });
+    }
+});
+
+// Community Post Routes
+app.get('/api/posts', async (req, res) => {
+    try {
+        // Does not require authentication to read posts
+        const result = await pool.query(`
+            SELECT p.*, u.username as author
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch posts' });
+    }
+});
+
+app.post('/api/posts', authenticateToken, async (req, res) => {
+    const { title, content, tags, scrapIds, thumbnail } = req.body;
+    if (!title || !content) return res.status(400).json({ error: 'Title and content are required' });
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO posts (user_id, title, content, tags, thumbnail, scrap_ids) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+            [req.user.userId, title, content, JSON.stringify(tags || []), thumbnail, JSON.stringify(scrapIds || [])]
+        );
+        res.status(201).json({ id: result.rows[0].id, message: 'Post created successfully' });
+    } catch (err) {
+        console.error('Failed to create post:', err);
+        res.status(500).json({ error: 'Failed to create post' });
     }
 });
 
