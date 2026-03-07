@@ -177,14 +177,14 @@ export const CommunityPage = () => {
               <div className="hidden sm:flex flex-row">
                 {/* Thumbnail */}
                 <div className="w-56 min-h-[180px] bg-gradient-to-br from-gray-50 to-gray-100/50 relative flex items-center justify-center shrink-0 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-50/50 via-transparent to-indigo-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  <div className="relative z-10 w-16 h-16 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-center text-gray-200 group-hover:text-violet-500 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-gray-50 overflow-hidden">
-                    {post.thumbnail ? (
-                      <img src={post.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
-                    ) : (
+                  <div className="absolute z-20 inset-0 bg-gradient-to-br from-violet-50/50 via-transparent to-indigo-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                  {post.thumbnail ? (
+                    <img src={post.thumbnail} alt="thumbnail" className="absolute z-10 inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  ) : (
+                    <div className="relative z-10 w-16 h-16 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-center text-gray-200 group-hover:text-violet-500 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-gray-50 overflow-hidden">
                       <BookOpen size={28} strokeWidth={1.5} />
-                    )}
-                  </div>
+                    </div>
+                  )}
                   {post.views > 100 && (
                     <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[10px] font-black uppercase tracking-wider rounded-full shadow-lg">
                       <Flame size={12} />
@@ -275,14 +275,14 @@ export const CommunityPage = () => {
 
                 {/* Feed Image (Thumbnail) */}
                 <div className="w-full aspect-[4/5] bg-gradient-to-br from-gray-50 to-gray-100 relative flex items-center justify-center overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-50/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  <div className="relative z-10 w-16 h-16 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-center text-gray-300 group-hover:text-violet-500 group-hover:scale-110 transition-all duration-500 border border-gray-100 overflow-hidden">
-                    {post.thumbnail ? (
-                      <img src={post.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
-                    ) : (
+                  <div className="absolute z-20 inset-0 bg-gradient-to-br from-violet-50/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                  {post.thumbnail ? (
+                    <img src={post.thumbnail} alt="thumbnail" className="absolute z-10 inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  ) : (
+                    <div className="relative z-10 w-16 h-16 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] flex items-center justify-center text-gray-300 group-hover:text-violet-500 group-hover:scale-110 transition-all duration-500 border border-gray-100 overflow-hidden">
                       <BookOpen size={28} strokeWidth={1.5} />
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Feed Actions */}

@@ -67,7 +67,7 @@ export const DashboardPage = () => {
                                 className="group relative bg-white rounded-[2.5rem] border border-gray-100/50 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_30px_60px_rgba(0,0,0,0.12)] hover:-translate-y-3 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden cursor-pointer"
                             >
                                 {/* Thumbnail Area */}
-                                <div className="aspect-[1.4/1] bg-[#fdfdfd] relative flex items-center justify-center overflow-hidden">
+                                <div className="aspect-[4/5] bg-[#fdfdfd] relative flex items-center justify-center overflow-hidden">
                                     {/* Animated Background Gradients */}
                                     <div className="absolute inset-0 bg-gradient-to-tr from-gray-50 via-white to-gray-50 opacity-50 group-hover:scale-125 transition-transform duration-1000"></div>
                                     <div className="absolute top-[-20%] left-[-20%] w-[140%] h-[140%] bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.02)_0%,transparent_70%)] group-hover:rotate-12 transition-transform duration-1000"></div>
@@ -107,7 +107,7 @@ export const DashboardPage = () => {
                                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">Closet Scrap</span>
                                             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
                                         </div>
-                                        <h3 className="font-extrabold text-2xl text-gray-900 leading-tight truncate group-hover:text-black transition-colors">{scrap.name}</h3>
+                                        <h3 className="font-extrabold text-xs text-gray-900 leading-tight truncate group-hover:text-black transition-colors">{scrap.name}</h3>
                                     </div>
                                     
                                     <div className="pt-6 border-t border-gray-50/80 flex items-center justify-between">
