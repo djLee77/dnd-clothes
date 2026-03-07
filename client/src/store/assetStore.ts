@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useAuthStore } from './authStore';
+import { useAuthStore, checkAuthResponse } from './authStore';
 
 export interface Category {
   id: number;
@@ -48,7 +48,11 @@ export const useAssetStore = create<AssetState>((set, get) => ({
         })
       ]);
 
-      if (!catRes.ok || !assetRes.ok) throw new Error('데이터를 가져오지 못했습니다.');
+      if (!catRes.ok || !assetRes.ok) {
+        checkAuthResponse(catRes);
+        checkAuthResponse(assetRes);
+        throw new Error('데이터를 가져오지 못했습니다.');
+      }
 
       const categories = await catRes.json();
       const assets = await assetRes.json();
@@ -74,6 +78,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
         },
         body: JSON.stringify({ name })
       });
+      checkAuthResponse(response);
       if (!response.ok) throw new Error('카테고리 추가에 실패했습니다.');
       await get().fetchData();
     } catch (err: any) {
@@ -91,6 +96,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      checkAuthResponse(response);
       if (!response.ok) throw new Error('카테고리 삭제에 실패했습니다.');
       await get().fetchData();
     } catch (err: any) {
@@ -112,6 +118,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
         },
         body: JSON.stringify(asset)
       });
+      checkAuthResponse(response);
       if (!response.ok) throw new Error('에셋 추가에 실패했습니다.');
       await get().fetchData();
     } catch (err: any) {
@@ -129,6 +136,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      checkAuthResponse(response);
       if (!response.ok) throw new Error('에셋 삭제에 실패했습니다.');
       await get().fetchData();
     } catch (err: any) {

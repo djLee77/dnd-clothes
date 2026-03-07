@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useAuthStore } from './authStore';
+import { useAuthStore, checkAuthResponse } from './authStore';
 import { useSceneStore } from './sceneStore';
 
 export interface Scrap {
@@ -33,6 +33,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
       const response = await fetch('/api/scraps', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      checkAuthResponse(response);
       if (!response.ok) throw new Error('스크랩 목록을 가져오지 못했습니다.');
       const data = await response.json();
       set({ scraps: data });
@@ -58,6 +59,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
         },
         body: JSON.stringify({ name, data: items, thumbnail })
       });
+      checkAuthResponse(response);
       if (!response.ok) throw new Error('스크랩 저장에 실패했습니다.');
       await get().fetchScraps();
     } catch (err: any) {
@@ -77,6 +79,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
       const response = await fetch(`/api/scraps/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      checkAuthResponse(response);
       if (!response.ok) throw new Error('스크랩을 불러오지 못했습니다.');
       const scrap = await response.json();
       
@@ -99,6 +102,7 @@ export const useScrapStore = create<ScrapState>((set, get) => ({
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      checkAuthResponse(response);
       if (!response.ok) throw new Error('스크랩 삭제에 실패했습니다.');
       await get().fetchScraps();
     } catch (err: any) {

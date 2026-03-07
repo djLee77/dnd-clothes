@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Navbar } from '../components/ui/Navbar'
 import { 
   Search, MessageSquare, Heart, Eye, Clock, TrendingUp, 
@@ -103,6 +104,7 @@ const CATEGORY_FILTERS = [
 ]
 
 export const CommunityPage = () => {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortType>('latest')
   const [activeCategory, setActiveCategory] = useState('all')
@@ -172,9 +174,8 @@ export const CommunityPage = () => {
               />
             </div>
             <button 
-              className="flex items-center gap-2 px-3 sm:px-6 py-3 bg-black text-white rounded-2xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-gray-200 opacity-50 cursor-not-allowed shrink-0"
-              title="준비 중인 기능입니다"
-              disabled
+              onClick={() => navigate('/create-post')}
+              className="flex items-center gap-2 px-3 sm:px-6 py-3 bg-black text-white rounded-2xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-gray-200 shrink-0"
             >
               <Sparkles size={18} />
               <span className="hidden sm:inline">새 글 작성</span>
