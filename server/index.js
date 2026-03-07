@@ -102,6 +102,25 @@ const pool = new Pool({
             )
         `);
 
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS post_likes (
+                post_id INTEGER NOT NULL REFERENCES posts (id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (post_id, user_id)
+            )
+        `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS post_comments (
+                id SERIAL PRIMARY KEY,
+                post_id INTEGER NOT NULL REFERENCES posts (id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         try {
             await pool.query('ALTER TABLE posts ADD COLUMN thumbnail TEXT');
         } catch (e) {
@@ -129,6 +148,23 @@ const authenticateToken = (req, res, next) => {
             return res.sendStatus(403);
         }
         req.user = user;
+        next();
+    });
+};
+
+// Middleware to optionally verify JWT
+const optionalAuthenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return next();
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (!err) {
+            req.user = user;
+        }
         next();
     });
 };
@@ -423,8 +459,11 @@ app.get('/api/posts', async (req, res) => {
     }
 });
 
-app.get('/api/posts/:id', async (req, res) => {
+app.get('/api/posts/:id', optionalAuthenticateToken, async (req, res) => {
     try {
+        // Increment view count
+        await pool.query('UPDATE posts SET views = views + 1 WHERE id = $1', [req.params.id]);
+
         const result = await pool.query(`
             SELECT p.*, u.username as author
             FROM posts p
@@ -445,7 +484,15 @@ app.get('/api/posts/:id', async (req, res) => {
             scraps = scrapsResult.rows;
         }
 
-        res.json({ post, scraps });
+        let isLiked = false;
+        if (req.user) {
+            const likeResult = await pool.query('SELECT 1 FROM post_likes WHERE post_id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
+            if (likeResult.rows.length > 0) {
+                isLiked = true;
+            }
+        }
+
+        res.json({ post, scraps, isLiked });
     } catch (err) {
         console.error('Failed to fetch post details:', err);
         res.status(500).json({ error: 'Failed to fetch post details' });
@@ -475,6 +522,80 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
     } catch (err) {
         console.error('Failed to delete post:', err);
         res.status(500).json({ error: 'Failed to delete post' });
+    }
+});
+
+// Toggle Post Like
+app.post('/api/posts/:id/like', authenticateToken, async (req, res) => {
+    const postId = req.params.id;
+    const userId = req.user.userId;
+
+    try {
+        // Check if like exists
+        const likeResult = await pool.query('SELECT * FROM post_likes WHERE post_id = $1 AND user_id = $2', [postId, userId]);
+
+        let liked = false;
+        if (likeResult.rows.length > 0) {
+            // Unlike
+            await pool.query('DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2', [postId, userId]);
+            await pool.query('UPDATE posts SET likes = likes - 1 WHERE id = $1', [postId]);
+            liked = false;
+        } else {
+            // Like
+            await pool.query('INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)', [postId, userId]);
+            await pool.query('UPDATE posts SET likes = likes + 1 WHERE id = $1', [postId]);
+            liked = true;
+        }
+
+        const updatedPost = await pool.query('SELECT likes FROM posts WHERE id = $1', [postId]);
+        res.json({ liked, likes: updatedPost.rows[0].likes });
+    } catch (err) {
+        console.error('Failed to toggle like:', err);
+        res.status(500).json({ error: 'Failed to toggle like' });
+    }
+});
+
+// Get Post Comments
+app.get('/api/posts/:id/comments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.*, u.username as author
+            FROM post_comments c
+            JOIN users u ON c.user_id = u.id
+            WHERE c.post_id = $1
+            ORDER BY c.created_at ASC
+        `, [req.params.id]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Failed to fetch comments:', err);
+        res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+});
+
+// Add Post Comment
+app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
+    const { content } = req.body;
+    const postId = req.params.id;
+    const userId = req.user.userId;
+
+    if (!content) return res.status(400).json({ error: 'Content is required' });
+
+    try {
+        await pool.query(
+            'INSERT INTO post_comments (post_id, user_id, content) VALUES ($1, $2, $3)',
+            [postId, userId, content]
+        );
+
+        // Update comments count on post
+        await pool.query('UPDATE posts SET comments = comments + 1 WHERE id = $1', [postId]);
+
+        const updatedPost = await pool.query('SELECT comments FROM posts WHERE id = $1', [postId]);
+
+        res.status(201).json({ message: 'Comment added', comments: updatedPost.rows[0].comments });
+    } catch (err) {
+        console.error('Failed to add comment:', err);
+        res.status(500).json({ error: 'Failed to add comment' });
     }
 });
 

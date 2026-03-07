@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Navbar } from '../components/ui/Navbar'
 import { usePostStore } from '../store/postStore'
@@ -21,7 +21,8 @@ const extractPriceSum = (items: any[]) => {
 export const PostDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { currentPost, currentPostScraps, isLoading, fetchPost, error } = usePostStore()
+  const [commentText, setCommentText] = useState('')
+  const { currentPost, currentPostScraps, currentComments, isLiked, isLoading, fetchPost, toggleLike, addComment, error } = usePostStore()
 
   useEffect(() => {
     if (id) {
@@ -74,6 +75,28 @@ export const PostDetailPage = () => {
   })
   const uniqueItems = Array.from(uniqueItemsMap.values())
   const totalPrice = extractPriceSum(uniqueItems)
+
+  const handleLike = () => {
+    if (currentPost) {
+       toggleLike(currentPost.id)
+    }
+  }
+
+  const handleCommentSubmit = async () => {
+    if (!commentText.trim() || !currentPost) return
+    try {
+      await addComment(currentPost.id, commentText.trim())
+      setCommentText('')
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleCommentSubmit()
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#fafafa]">
@@ -130,7 +153,9 @@ export const PostDetailPage = () => {
         <div className="px-4 py-3 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 text-gray-800">
-               <button className="hover:text-rose-500 transition-colors"><Heart size={26} strokeWidth={1.5} /></button>
+               <button onClick={handleLike} className="transition-colors active:scale-95">
+                 <Heart size={26} strokeWidth={isLiked ? 0 : 1.5} fill={isLiked ? '#f43f5e' : 'none'} className={isLiked ? 'text-rose-500' : 'hover:text-rose-500'} />
+               </button>
                <button className="hover:text-blue-500 transition-colors"><MessageSquare size={26} strokeWidth={1.5} /></button>
                <button className="hover:text-gray-500 transition-colors"><Share2 size={24} strokeWidth={1.5} /></button>
             </div>
@@ -206,35 +231,55 @@ export const PostDetailPage = () => {
           </div>
         )}
 
-        {/* Comments Dummy Section */}
+        {/* Comments Section */}
         <div className="px-4 py-6">
            <h3 className="text-sm font-bold text-gray-900 mb-4">댓글 {currentPost.comments}개</h3>
            
            <div className="flex gap-3 mb-6">
               <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />
               <div className="flex-1 flex items-center bg-gray-100 rounded-full px-4 border border-transparent focus-within:border-gray-300 transition-colors">
-                 <input type="text" placeholder="댓글 달기..." className="w-full py-2 bg-transparent text-sm focus:outline-none" />
-                 <button className="text-sm font-bold text-indigo-500 ml-2 whitespace-nowrap opacity-70 hover:opacity-100 transition-opacity">게시</button>
+                 <input 
+                   type="text" 
+                   value={commentText}
+                   onChange={(e) => setCommentText(e.target.value)}
+                   onKeyDown={handleKeyDown}
+                   placeholder="댓글 달기..." 
+                   className="w-full py-2 bg-transparent text-sm focus:outline-none" 
+                 />
+                 <button 
+                   onClick={handleCommentSubmit}
+                   disabled={!commentText.trim()}
+                   className="text-sm font-bold text-indigo-500 ml-2 whitespace-nowrap opacity-70 hover:opacity-100 transition-opacity disabled:opacity-50"
+                 >
+                   게시
+                 </button>
               </div>
            </div>
 
            <div className="flex flex-col gap-4">
-              <div className="flex gap-3">
-                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-100 to-rose-100 border border-gray-200 flex items-center justify-center shrink-0">
-                   <span className="text-[10px] font-bold text-gray-400">P</span>
-                 </div>
-                 <div className="flex-1">
-                    <div className="text-sm leading-tight text-gray-900">
-                       <span className="font-bold mr-2">polo_lover</span>
-                       코디 너무 멋져요! 아이템 조합이 최고네요 🔥
-                    </div>
-                    <div className="flex gap-3 mt-1 text-xs text-gray-500 font-medium">
-                       <span>1시간 전</span>
-                       <button className="font-bold text-gray-400 hover:text-gray-600">답글 달기</button>
-                    </div>
-                 </div>
-                 <button className="text-gray-300 hover:text-rose-500 self-start mt-0.5"><Heart size={14} /></button>
-              </div>
+              {currentComments.map((comment: any) => (
+                <div key={comment.id} className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0">
+                    <span className="text-[10px] right font-bold text-gray-400">
+                      {comment.author?.[0]?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                      <div className="text-sm leading-tight text-gray-900">
+                        <span className="font-bold mr-2">{comment.author}</span>
+                        {comment.content}
+                      </div>
+                      <div className="flex gap-3 mt-1 text-xs text-gray-500 font-medium">
+                        <span>{new Date(comment.created_at).toLocaleDateString('ko-KR')}</span>
+                        <button className="font-bold text-gray-400 hover:text-gray-600">답글 달기</button>
+                      </div>
+                  </div>
+                  <button className="text-gray-300 hover:text-rose-500 self-start mt-0.5"><Heart size={14} /></button>
+                </div>
+              ))}
+              {currentComments.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-6">가장 먼저 댓글을 남겨보세요!</p>
+              )}
            </div>
         </div>
       </main>
