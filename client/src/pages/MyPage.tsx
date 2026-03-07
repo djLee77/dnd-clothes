@@ -101,15 +101,15 @@ export const MyPage = () => {
                   )}
                   
                   {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
-                    <div className="flex items-center gap-4 sm:gap-6 text-white text-xs sm:text-base font-bold">
+                  <div className="absolute inset-0 bg-black/5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:bg-black/40 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                    <div className="flex items-center gap-4 sm:gap-6 text-white text-xs sm:text-base font-bold opacity-0 sm:opacity-100 sm:group-hover:opacity-100">
                        <div className="flex items-center gap-1.5"><Heart size={18} fill="currentColor" className="sm:w-5 sm:h-5 w-4 h-4" /> {post.likes}</div>
                        <div className="flex items-center gap-1.5"><MessageSquare size={18} fill="currentColor" className="sm:w-5 sm:h-5 w-4 h-4" /> {post.comments}</div>
                     </div>
                   </div>
 
                   {/* Actions (Delete) */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                  <div className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 z-10">
                      <button 
                         onClick={(e) => handleDelete(e, post.id)}
                         className="p-1.5 sm:p-2.5 bg-white/90 hover:bg-red-500 hover:text-white text-gray-600 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-colors"
