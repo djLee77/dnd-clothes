@@ -7,6 +7,7 @@ import { useAuthStore } from './store/authStore'
 import { DashboardPage } from './pages/DashboardPage'
 import { CommunityPage } from './pages/CommunityPage'
 import { CreatePostPage } from './pages/CreatePostPage'
+import { PostDetailPage } from './pages/PostDetailPage'
 import { MyPage } from './pages/MyPage'
 import { MobileDesktopOnly } from './components/ui/MobileDesktopOnly'
 
@@ -52,6 +53,8 @@ function App() {
         } />
         {/* Redirect legacy /community to / */}
         <Route path="/community" element={<Navigate to="/" replace />} />
+        {/* Post Detail */}
+        <Route path="/post/:id" element={<PostDetailPage />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>
     </Router>

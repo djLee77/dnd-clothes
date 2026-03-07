@@ -20,15 +20,20 @@ export interface Post {
 
 interface PostState {
   posts: Post[]
+  currentPost: Post | null
+  currentPostScraps: any[]
   isLoading: boolean
   error: string | null
   fetchPosts: () => Promise<void>
+  fetchPost: (id: number) => Promise<void>
   createPost: (title: string, content: string, tags: string[], scrapIds: number[], thumbnail: string | null) => Promise<void>
   deletePost: (id: number) => Promise<void>
 }
 
 export const usePostStore = create<PostState>((set) => ({
   posts: [],
+  currentPost: null,
+  currentPostScraps: [],
   isLoading: false,
   error: null,
 
@@ -49,6 +54,31 @@ export const usePostStore = create<PostState>((set) => ({
       }))
 
       set({ posts: formattedData, isLoading: false })
+    } catch (err: any) {
+      set({ error: err.message || '게시글을 불러오는데 실패했습니다.', isLoading: false })
+    }
+  },
+
+  fetchPost: async (id: number) => {
+    set({ isLoading: true, error: null, currentPost: null, currentPostScraps: [] })
+    try {
+      const response = await fetch(`${API_URL}/posts/${id}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch post')
+      }
+      const data = await response.json()
+      
+      const formattedPost = {
+        ...data.post,
+        tags: JSON.parse(data.post.tags || '[]'),
+        scrap_ids: JSON.parse(data.post.scrap_ids || '[]')
+      }
+
+      set({ 
+        currentPost: formattedPost, 
+        currentPostScraps: data.scraps, 
+        isLoading: false 
+      })
     } catch (err: any) {
       set({ error: err.message || '게시글을 불러오는데 실패했습니다.', isLoading: false })
     }

@@ -172,6 +172,7 @@ export const CommunityPage = () => {
           {filteredPosts.map((post, index) => (
             <article 
               key={post.id}
+              onClick={() => navigate(`/post/${post.id}`)}
               className="group relative bg-white rounded-[2rem] border border-gray-100/50 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden cursor-pointer"
               style={{ animationDelay: `${index * 60}ms` }}
             >

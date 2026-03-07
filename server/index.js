@@ -423,6 +423,35 @@ app.get('/api/posts', async (req, res) => {
     }
 });
 
+app.get('/api/posts/:id', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.*, u.username as author
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.id = $1
+        `, [req.params.id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+
+        const post = result.rows[0];
+        const scrapIds = JSON.parse(post.scrap_ids || '[]');
+
+        let scraps = [];
+        if (scrapIds.length > 0) {
+            const scrapsResult = await pool.query('SELECT * FROM scraps WHERE id = ANY($1::int[])', [scrapIds]);
+            scraps = scrapsResult.rows;
+        }
+
+        res.json({ post, scraps });
+    } catch (err) {
+        console.error('Failed to fetch post details:', err);
+        res.status(500).json({ error: 'Failed to fetch post details' });
+    }
+});
+
 app.post('/api/posts', authenticateToken, async (req, res) => {
     const { title, content, tags, scrapIds, thumbnail } = req.body;
     if (!title || !content) return res.status(400).json({ error: 'Title and content are required' });

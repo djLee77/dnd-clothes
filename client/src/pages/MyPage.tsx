@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Navbar } from '../components/ui/Navbar'
 import { useAuthStore } from '../store/authStore'
 import { usePostStore } from '../store/postStore'
@@ -7,6 +8,7 @@ import { Settings, Heart, MessageSquare, Trash2, LayoutGrid } from 'lucide-react
 export const MyPage = () => {
   const { user } = useAuthStore()
   const { posts, fetchPosts, deletePost } = usePostStore()
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchPosts()
@@ -91,7 +93,11 @@ export const MyPage = () => {
           {myPosts.length > 0 ? (
             <div className="grid grid-cols-3 gap-1 sm:gap-4 lg:gap-8">
               {myPosts.map(post => (
-                <div key={post.id} className="relative group aspect-square bg-[#f8f8f8] cursor-pointer overflow-hidden rounded-sm sm:rounded-xl">
+                <div 
+                  key={post.id} 
+                  onClick={() => navigate(`/post/${post.id}`)}
+                  className="relative group aspect-square bg-[#f8f8f8] cursor-pointer overflow-hidden rounded-sm sm:rounded-xl"
+                >
                   {post.thumbnail ? (
                     <img src={post.thumbnail} className="w-full h-full object-cover transition-transform group-hover:scale-[1.03] duration-500 border border-gray-100 sm:border-transparent" alt="post" />
                   ) : (
