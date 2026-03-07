@@ -363,7 +363,10 @@ export const Sidebar = () => {
                                     onChange={(e) => handleFileUpload(e, category.id)}
                                 />
                                 <button
-                                    onClick={() => fileInputRefs.current[category.id]?.click()}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        fileInputRefs.current[category.id]?.click();
+                                    }}
                                     className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all"
                                     title="이미지 업로드"
                                     data-tutorial="upload-image-btn"
@@ -371,7 +374,10 @@ export const Sidebar = () => {
                                     <Upload size={18} />
                                 </button>
                                 <button
-                                    onClick={() => deleteCategory(category.id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteCategory(category.id);
+                                    }}
                                     className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
                                     title="카테고리 삭제"
                                 >

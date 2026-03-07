@@ -1,5 +1,5 @@
 import React from 'react'
-import { BringToFront, SendToBack, MoveUp, MoveDown } from 'lucide-react'
+import { BringToFront, SendToBack, MoveUp, MoveDown, Trash2 } from 'lucide-react'
 import { useSceneStore } from '../../store/sceneStore'
 
 interface ItemFloatingToolbarProps {
@@ -7,12 +7,19 @@ interface ItemFloatingToolbarProps {
   x: number
   y: number
   isVisible: boolean
+  onDelete?: () => void
 }
 
-export const ItemFloatingToolbar: React.FC<ItemFloatingToolbarProps> = ({ itemId, x, y, isVisible }) => {
-  const { bringToFront, sendToBack, moveForward, moveBackward } = useSceneStore()
+export const ItemFloatingToolbar: React.FC<ItemFloatingToolbarProps> = ({ itemId, x, y, isVisible, onDelete }) => {
+  const { bringToFront, sendToBack, moveForward, moveBackward, removeItem } = useSceneStore()
 
   if (!isVisible) return null
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    removeItem(itemId)
+    onDelete?.()
+  }
 
   return (
     <div 
@@ -51,6 +58,15 @@ export const ItemFloatingToolbar: React.FC<ItemFloatingToolbarProps> = ({ itemId
       >
         <SendToBack size={16} />
       </button>
+      <div className="w-px h-5 bg-gray-200 mx-0.5" />
+      <button
+        onClick={handleDelete}
+        className="p-1.5 hover:bg-red-50 rounded-full text-gray-400 hover:text-red-500 transition-colors"
+        title="삭제"
+      >
+        <Trash2 size={16} />
+      </button>
     </div>
   )
 }
+

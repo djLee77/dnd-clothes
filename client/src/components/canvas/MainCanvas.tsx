@@ -5,15 +5,16 @@ import { useCanvasStore } from '../../store/canvasStore'
 import { useUiStore } from '../../store/uiStore'
 import { GridBackground } from '../ui/GridBackground'
 import { URLImage } from './URLImage'
-
+import { ItemFloatingToolbar } from './ItemFloatingToolbar'
 export const MainCanvas = () => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const { scale, position, setPosition, setScale } = useCanvasStore()
-  const { items, addItem, updateItem } = useSceneStore()
+  const { items, addItem, updateItem, removeItem } = useSceneStore()
   const { selectedItemId, setSelectedItemId, setStageRef } = useUiStore()
   const stageRef = useRef<any>(null)
   const transformerRef = useRef<any>(null)
+  const [toolbarPosition, setToolbarPosition] = useState<{x: number, y: number} | null>(null)
 
   useEffect(() => {
     if (stageRef.current) {
@@ -37,21 +38,45 @@ export const MainCanvas = () => {
     return () => window.removeEventListener('resize', updateDimensions)
   }, [])
 
-  // Update Transformer selection
+  // Keyboard shortcut: Delete/Backspace to remove selected item
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedItemId) return
+      // Don't delete if user is typing in an input/textarea
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault()
+        removeItem(selectedItemId)
+        setSelectedItemId(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedItemId, removeItem, setSelectedItemId])
+
+  // Update Transformer selection and Toolbar position
   useEffect(() => {
     if (selectedItemId && transformerRef.current && stageRef.current) {
       const selectedNode = stageRef.current.findOne('#' + selectedItemId)
       if (selectedNode) {
         transformerRef.current.nodes([selectedNode])
         transformerRef.current.getLayer().batchDraw()
+        // Konva's getClientRect() returns the rect relative to the top-left of the canvas container, properly handling stage scale & position.
+        const rect = selectedNode.getClientRect()
+        setToolbarPosition({ x: rect.x + rect.width, y: rect.y })
       } else {
         transformerRef.current.nodes([])
+        setToolbarPosition(null)
       }
     } else if (transformerRef.current) {
       transformerRef.current.nodes([])
       transformerRef.current.getLayer().batchDraw()
+      setToolbarPosition(null)
     }
-  }, [selectedItemId, items])
+  }, [selectedItemId, items, scale, position])
 
 
   const handleDrop = (e: React.DragEvent) => {
@@ -245,6 +270,17 @@ export const MainCanvas = () => {
            />
         </Layer>
       </Stage>
+
+      {/* Floating Toolbar */}
+      {selectedItemId && toolbarPosition && (
+        <ItemFloatingToolbar
+          itemId={selectedItemId}
+          x={toolbarPosition.x}
+          y={toolbarPosition.y}
+          isVisible={true}
+          onDelete={() => setSelectedItemId(null)}
+        />
+      )}
     </div>
   )
 }
