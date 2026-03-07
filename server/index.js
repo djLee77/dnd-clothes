@@ -439,6 +439,16 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
     }
 });
 
+app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM posts WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
+        res.json({ message: 'Post deleted successfully' });
+    } catch (err) {
+        console.error('Failed to delete post:', err);
+        res.status(500).json({ error: 'Failed to delete post' });
+    }
+});
+
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
     console.log(`404 - API route not found: ${req.method} ${req.url}`);

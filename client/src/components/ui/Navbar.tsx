@@ -37,13 +37,16 @@ export const Navbar = () => {
             </button>
             {isAuthenticated ? (
                 <>
-                    <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group">
+                    <button 
+                        onClick={() => navigate('/mypage')}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group"
+                    >
                         <UserCircle size={18} className="group-hover:text-black transition-colors" />
                         <span className="hidden sm:inline">{user?.username || '마이페이지'}</span>
                     </button>
                     <button 
                         onClick={logout}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-95 group"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95 group"
                     >
                         <LogOut size={18} />
                         <span className="hidden sm:inline">로그아웃</span>

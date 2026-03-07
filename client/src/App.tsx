@@ -7,6 +7,7 @@ import { useAuthStore } from './store/authStore'
 import { DashboardPage } from './pages/DashboardPage'
 import { CommunityPage } from './pages/CommunityPage'
 import { CreatePostPage } from './pages/CreatePostPage'
+import { MyPage } from './pages/MyPage'
 import { MobileDesktopOnly } from './components/ui/MobileDesktopOnly'
 
 function App() {
@@ -41,6 +42,12 @@ function App() {
             <DesktopOnlyRoute>
               <DashboardPage />
             </DesktopOnlyRoute>
+          </ProtectedRoute>
+        } />
+        {/* My Page */}
+        <Route path="/mypage" element={
+          <ProtectedRoute>
+            <MyPage />
           </ProtectedRoute>
         } />
         {/* Redirect legacy /community to / */}

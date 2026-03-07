@@ -24,6 +24,7 @@ interface PostState {
   error: string | null
   fetchPosts: () => Promise<void>
   createPost: (title: string, content: string, tags: string[], scrapIds: number[], thumbnail: string | null) => Promise<void>
+  deletePost: (id: number) => Promise<void>
 }
 
 export const usePostStore = create<PostState>((set) => ({
@@ -76,6 +77,33 @@ export const usePostStore = create<PostState>((set) => ({
       // Optionally re-fetch here if needed
     } catch (err: any) {
       set({ error: err.message || '게시글 작성에 실패했습니다.', isLoading: false })
+      throw err
+    }
+  },
+
+  deletePost: async (id) => {
+    set({ isLoading: true, error: null })
+    const { token } = useAuthStore.getState()
+    try {
+      const response = await fetch(`${API_URL}/posts/${id}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      })
+
+      checkAuthResponse(response)
+
+      if (!response.ok) {
+        throw new Error('Failed to delete post')
+      }
+
+      set((state) => ({ 
+        posts: state.posts.filter((post) => post.id !== id),
+        isLoading: false 
+      }))
+    } catch (err: any) {
+      set({ error: err.message || '게시글 삭제에 실패했습니다.', isLoading: false })
       throw err
     }
   }
