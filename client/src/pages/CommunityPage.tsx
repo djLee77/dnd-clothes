@@ -71,50 +71,52 @@ export const CommunityPage = () => {
       
       <main className="pt-20 sm:pt-24 pb-12 px-4 sm:px-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-8 sm:mb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-10">
           <div>
-            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-violet-200">
-                <Sparkles size={16} className="text-white sm:hidden" />
+            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-3">
+              <div className="w-6 h-6 sm:w-10 sm:h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg shadow-violet-200">
+                <Sparkles size={12} className="text-white sm:hidden" />
                 <Sparkles size={20} className="text-white hidden sm:block" />
               </div>
               <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-violet-500">Community</span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-black text-black tracking-tight mb-1 sm:mb-2">스타일 게시판</h1>
-            <p className="text-sm sm:text-base text-gray-400 font-medium">다른 사람들의 코디를 구경하고, 나만의 스크랩을 공유해보세요.</p>
+            <h1 className="text-2xl sm:text-4xl font-black text-black tracking-tight mb-1">스타일 게시판</h1>
+            <p className="hidden sm:block text-sm sm:text-base text-gray-400 font-medium">다른 사람들의 코디를 구경하고, 나만의 스크랩을 공유해보세요.</p>
           </div>
           
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative group flex-1 sm:flex-none">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={18} />
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={16} />
               <input 
                 type="text" 
-                placeholder="게시글 검색..." 
+                placeholder="검색..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11 pr-6 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-black/5 focus:border-gray-200 transition-all w-full sm:w-64 shadow-sm"
+                className="pl-9 sm:pl-11 pr-4 sm:pr-6 py-2.5 sm:py-3 bg-white border border-gray-100 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-4 focus:ring-black/5 focus:border-gray-200 transition-all w-full sm:w-64"
               />
             </div>
             <button 
               onClick={() => navigate('/create-post')}
-              className="flex items-center gap-2 px-3 sm:px-6 py-3 bg-black text-white rounded-2xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-gray-200 shrink-0"
+              className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-black text-white rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shrink-0"
             >
-              <Sparkles size={18} />
+              <Sparkles size={14} className="sm:hidden" />
+              <Sparkles size={18} className="hidden sm:block" />
               <span className="hidden sm:inline">새 글 작성</span>
+              <span className="inline sm:hidden">작성</span>
             </button>
           </div>
         </div>
 
         {/* Category Tabs & Sort */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+        <div className="flex flex-row items-center justify-between gap-3 mb-6 sm:mb-8">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide flex-1">
             {CATEGORY_FILTERS.map(cat => {
               const Icon = cat.icon
               return (
                 <button
                   key={cat.value}
                   onClick={() => setActiveCategory(cat.value)}
-                  className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 ${
                     activeCategory === cat.value
                       ? 'bg-black text-white shadow-lg shadow-gray-200 scale-105'
                       : 'bg-white text-gray-500 hover:text-black hover:bg-gray-50 border border-gray-100'
@@ -129,7 +131,7 @@ export const CommunityPage = () => {
           </div>
 
           {/* Sort Dropdown */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               onClick={() => setShowSortDropdown(!showSortDropdown)}
               onBlur={() => setTimeout(() => setShowSortDropdown(false), 150)}
@@ -274,7 +276,7 @@ export const CommunityPage = () => {
                 </div>
 
                 {/* Feed Image (Thumbnail) */}
-                <div className="w-full aspect-[4/5] bg-gradient-to-br from-gray-50 to-gray-100 relative flex items-center justify-center overflow-hidden">
+                <div className="w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 relative flex items-center justify-center overflow-hidden">
                   <div className="absolute z-20 inset-0 bg-gradient-to-br from-violet-50/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                   {post.thumbnail ? (
                     <img src={post.thumbnail} alt="thumbnail" className="absolute z-10 inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
