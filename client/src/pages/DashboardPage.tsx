@@ -5,7 +5,7 @@ import { Trash2, Calendar, Layout, Search, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export const DashboardPage = () => {
-    const { scraps, fetchScraps, deleteScrap, isLoading } = useScrapStore()
+    const { scraps, fetchScraps, deleteScrap, loadScrap, isLoading } = useScrapStore()
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -60,7 +60,10 @@ export const DashboardPage = () => {
                         {scraps.map(scrap => (
                             <div 
                                 key={scrap.id}
-                                onClick={() => navigate('/editor')} 
+                                onClick={async () => {
+                                    await loadScrap(scrap.id)
+                                    navigate('/editor')
+                                }} 
                                 className="group relative bg-white rounded-[2.5rem] border border-gray-100/50 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_30px_60px_rgba(0,0,0,0.12)] hover:-translate-y-3 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden cursor-pointer"
                             >
                                 {/* Thumbnail Area */}
@@ -85,9 +88,9 @@ export const DashboardPage = () => {
                                     </div>
                                     
                                     {/* Detail Overlay */}
-                                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20"></div>
                                     
-                                    <div className="absolute top-5 right-5 flex gap-2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-100">
+                                    <div className="absolute top-5 right-5 flex gap-2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-100 z-30">
                                         <button 
                                             onClick={(e) => handleDelete(e, scrap.id)}
                                             className="w-11 h-11 bg-white/95 backdrop-blur-xl text-gray-400 hover:text-red-500 rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all border border-gray-100"

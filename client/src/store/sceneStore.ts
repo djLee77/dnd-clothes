@@ -13,6 +13,7 @@ export interface CanvasItem {
   scaleX?: number
   scaleY?: number
   src?: string
+  originalSrc?: string
   name?: string
   price?: string
   siteUrl?: string

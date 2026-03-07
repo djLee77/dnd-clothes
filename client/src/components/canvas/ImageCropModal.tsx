@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import { X, Check } from 'lucide-react'
@@ -7,7 +7,7 @@ interface ImageCropModalProps {
   isOpen: boolean
   imageUrl: string
   onClose: () => void
-  onCropComplete: (croppedImgb64: string) => void
+  onCropComplete: (croppedImgb64: string, w: number, h: number) => void
 }
 
 export const ImageCropModal: React.FC<ImageCropModalProps> = ({ isOpen, imageUrl, onClose, onCropComplete }) => {
@@ -15,12 +15,19 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({ isOpen, imageUrl
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>()
   const imgRef = useRef<HTMLImageElement>(null)
 
+  useEffect(() => {
+    if (isOpen) {
+      setCrop(undefined)
+      setCompletedCrop(undefined)
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
   const handleComplete = async () => {
     if (completedCrop && imgRef.current && completedCrop.width > 0 && completedCrop.height > 0) {
       const croppedImage = await getCroppedImg(imgRef.current, completedCrop)
-      onCropComplete(croppedImage)
+      onCropComplete(croppedImage, completedCrop.width, completedCrop.height)
     } else {
       onClose()
     }
@@ -32,8 +39,11 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({ isOpen, imageUrl
     const scaleX = image.naturalWidth / image.width
     const scaleY = image.naturalHeight / image.height
     
-    canvas.width = crop.width
-    canvas.height = crop.height
+    const pixelWidth = Math.max(1, Math.floor(crop.width * scaleX))
+    const pixelHeight = Math.max(1, Math.floor(crop.height * scaleY))
+
+    canvas.width = pixelWidth
+    canvas.height = pixelHeight
     
     const ctx = canvas.getContext('2d')
     if (!ctx) return Promise.reject(new Error('No 2d context'))
@@ -46,8 +56,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({ isOpen, imageUrl
       crop.height * scaleY,
       0,
       0,
-      crop.width,
-      crop.height
+      pixelWidth,
+      pixelHeight
     )
 
     return new Promise((resolve) => {

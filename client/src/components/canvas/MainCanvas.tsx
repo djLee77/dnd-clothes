@@ -112,6 +112,7 @@ export const MainCanvas = () => {
                 scaleX: 1,
                 scaleY: 1,
                 src: src,
+                originalSrc: src,
                 name: name,
                 price: price,
                 siteUrl: siteUrl
@@ -288,7 +289,7 @@ export const MainCanvas = () => {
           onCropClick={() => {
             const item = items.find(i => i.id === selectedItemId)
             if (item && item.type === 'image' && item.src) {
-              setCroppingImageUrl(item.src)
+              setCroppingImageUrl(item.originalSrc || item.src)
               setCroppingItemId(item.id)
               setIsCropModalOpen(true)
             }
@@ -305,10 +306,17 @@ export const MainCanvas = () => {
           setCroppingImageUrl('')
           setCroppingItemId(null)
         }}
-        onCropComplete={(croppedBase64) => {
+        onCropComplete={(croppedBase64, w, h) => {
           if (croppingItemId) {
+            const item = items.find(i => i.id === croppingItemId)
+            const currentWidth = item ? item.width * (item.scaleX || 1) : 200
+            const newWidth = currentWidth
+            const newHeight = w > 0 ? currentWidth * (h / w) : currentWidth
+
             updateItem(croppingItemId, { 
                 src: croppedBase64,
+                width: newWidth,
+                height: newHeight,
                 // Reset scale to 1 so the newly cropped image dimensions are properly matched
                 scaleX: 1, 
                 scaleY: 1 

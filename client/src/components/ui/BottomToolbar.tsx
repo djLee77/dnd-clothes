@@ -25,7 +25,7 @@ export const BottomToolbar = () => {
             reader.readAsDataURL(blob)
             reader.onloadend = () => {
                 const base64data = reader.result as string
-                updateItem(selectedItem.id, { src: base64data })
+                updateItem(selectedItem.id, { src: base64data, originalSrc: base64data })
             }
         } catch (error) {
             console.error('Failed to remove background:', error)

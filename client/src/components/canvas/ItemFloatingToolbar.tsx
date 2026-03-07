@@ -29,7 +29,7 @@ export const ItemFloatingToolbar: React.FC<ItemFloatingToolbarProps> = ({ itemId
 
   return (
     <div 
-      className="absolute z-50 flex items-center gap-1 p-1.5 bg-white/90 backdrop-blur-md border border-white/80 rounded-full shadow-lg transition-all duration-200 animate-slide-up"
+      className="absolute z-50 flex items-center gap-1 p-1.5 bg-white/90 backdrop-blur-md border border-white/80 rounded-full shadow-lg animate-slide-up"
       style={{ 
         left: x, 
         top: y - 45, // Position above the item
