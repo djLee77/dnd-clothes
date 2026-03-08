@@ -31,8 +31,9 @@ interface PostState {
   createPost: (title: string, content: string, tags: string[], scrapIds: number[], thumbnail: string | null) => Promise<void>
   deletePost: (id: number) => Promise<void>
   toggleLike: (id: number) => Promise<void>
+  toggleCommentLike: (id: number) => Promise<void>
   fetchComments: (id: number) => Promise<void>
-  addComment: (id: number, content: string) => Promise<void>
+  addComment: (id: number, content: string, parent_id?: number | null) => Promise<void>
 }
 
 export const usePostStore = create<PostState>((set, get) => ({
@@ -188,7 +189,12 @@ export const usePostStore = create<PostState>((set, get) => ({
 
   fetchComments: async (id: number) => {
     try {
-      const response = await fetch(`${API_URL}/posts/${id}/comments`)
+      const { token } = useAuthStore.getState()
+      const response = await fetch(`${API_URL}/posts/${id}/comments`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      })
       if (!response.ok) throw new Error('Failed to fetch comments')
       const data = await response.json()
       set({ currentComments: data })
@@ -197,7 +203,7 @@ export const usePostStore = create<PostState>((set, get) => ({
     }
   },
 
-  addComment: async (id: number, content: string) => {
+  addComment: async (id: number, content: string, parent_id?: number | null) => {
     const { token } = useAuthStore.getState()
     if (!token) {
        alert('로그인이 필요한 기능입니다.')
@@ -211,7 +217,7 @@ export const usePostStore = create<PostState>((set, get) => ({
            'Content-Type': 'application/json',
            Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content, parent_id })
       })
       checkAuthResponse(response)
       if (!response.ok) throw new Error('Failed to add comment')
@@ -226,6 +232,34 @@ export const usePostStore = create<PostState>((set, get) => ({
     } catch (err: any) {
       console.error(err)
       throw err
+    }
+  },
+
+  toggleCommentLike: async (id: number) => {
+    const { token } = useAuthStore.getState()
+    if (!token) {
+       alert('로그인이 필요한 기능입니다.')
+       return
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/comments/${id}/like`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      checkAuthResponse(response)
+      if (!response.ok) throw new Error('Failed to toggle comment like')
+      
+      const data = await response.json()
+      
+      set((state) => ({
+         currentComments: state.currentComments.map((comment: any) => 
+           comment.id === id ? { ...comment, likes: data.likes, isLiked: data.liked } : comment
+         )
+      }))
+
+    } catch (err: any) {
+      console.error(err)
     }
   }
 }))

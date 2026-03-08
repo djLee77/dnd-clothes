@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Navbar } from '../components/ui/Navbar'
 import { usePostStore } from '../store/postStore'
-import { ArrowLeft, Heart, MessageSquare, Share2, MoreHorizontal, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Heart, MessageSquare, Share2, MoreHorizontal, ExternalLink, X } from 'lucide-react'
 
 // Helper to extract and format numbers from price strings (e.g. "1,000원", "10000", "가격미정")
 const extractPriceSum = (items: any[]) => {
@@ -22,7 +22,10 @@ export const PostDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [commentText, setCommentText] = useState('')
-  const { currentPost, currentPostScraps, currentComments, isLiked, isLoading, fetchPost, toggleLike, addComment, error } = usePostStore()
+  const [replyToId, setReplyToId] = useState<number | null>(null)
+  const [replyToAuthor, setReplyToAuthor] = useState<string | null>(null)
+  const commentInputRef = useRef<HTMLInputElement>(null)
+  const { currentPost, currentPostScraps, currentComments, isLiked, isLoading, fetchPost, toggleLike, toggleCommentLike, addComment, error } = usePostStore()
 
   useEffect(() => {
     if (id) {
@@ -85,8 +88,10 @@ export const PostDetailPage = () => {
   const handleCommentSubmit = async () => {
     if (!commentText.trim() || !currentPost) return
     try {
-      await addComment(currentPost.id, commentText.trim())
+      await addComment(currentPost.id, commentText.trim(), replyToId)
       setCommentText('')
+      setReplyToId(null)
+      setReplyToAuthor(null)
     } catch (e) {
       console.error(e)
     }
@@ -97,6 +102,9 @@ export const PostDetailPage = () => {
       handleCommentSubmit()
     }
   }
+
+  const parentComments = currentComments.filter((c: any) => !c.parent_id)
+  const childComments = currentComments.filter((c: any) => c.parent_id)
 
   return (
     <div className="min-h-screen bg-[#fafafa]">
@@ -235,10 +243,17 @@ export const PostDetailPage = () => {
         <div className="px-4 py-6">
            <h3 className="text-sm font-bold text-gray-900 mb-4">댓글 {currentPost.comments}개</h3>
            
+           {replyToId && (
+              <div className="flex items-center justify-between bg-gray-50 px-4 py-2 mb-2 rounded-lg text-sm text-gray-600 border border-gray-100">
+                 <span><span className="font-bold text-gray-900">{replyToAuthor}</span>님에게 답글 남기는 중...</span>
+                 <button onClick={() => { setReplyToId(null); setReplyToAuthor(null); }} className="p-1 hover:text-gray-900"><X size={14} /></button>
+              </div>
+           )}
            <div className="flex gap-3 mb-6">
               <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />
               <div className="flex-1 flex items-center bg-gray-100 rounded-full px-4 border border-transparent focus-within:border-gray-300 transition-colors">
                  <input 
+                   ref={commentInputRef}
                    type="text" 
                    value={commentText}
                    onChange={(e) => setCommentText(e.target.value)}
@@ -257,24 +272,58 @@ export const PostDetailPage = () => {
            </div>
 
            <div className="flex flex-col gap-4">
-              {currentComments.map((comment: any) => (
-                <div key={comment.id} className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0">
-                    <span className="text-[10px] right font-bold text-gray-400">
-                      {comment.author?.[0]?.toUpperCase() || 'U'}
-                    </span>
+              {parentComments.map((comment: any) => (
+                <div key={comment.id} className="flex flex-col gap-3">
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0">
+                      <span className="text-[10px] right font-bold text-gray-400">
+                        {comment.author?.[0]?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                        <div className="text-sm leading-tight text-gray-900">
+                          <span className="font-bold mr-2">{comment.author}</span>
+                          {comment.content}
+                        </div>
+                        <div className="flex gap-3 mt-1 text-xs text-gray-500 font-medium">
+                          <span>{new Date(comment.created_at).toLocaleDateString('ko-KR')}</span>
+                          <button onClick={() => { setReplyToId(comment.id); setReplyToAuthor(comment.author); commentInputRef.current?.focus(); }} className="font-bold text-gray-400 hover:text-gray-600">답글 달기</button>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-center ml-2 mt-1">
+                      <button onClick={() => toggleCommentLike(comment.id)} className="text-gray-300 hover:text-rose-500 active:scale-95 transition-transform">
+                         <Heart size={14} fill={comment.isLiked ? '#f43f5e' : 'none'} className={comment.isLiked ? 'text-rose-500' : ''} />
+                      </button>
+                      {comment.likes > 0 && <span className="text-[10px] text-gray-400 font-bold mt-0.5">{comment.likes}</span>}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                      <div className="text-sm leading-tight text-gray-900">
-                        <span className="font-bold mr-2">{comment.author}</span>
-                        {comment.content}
+
+                  {/* Replies */}
+                  {childComments.filter((c: any) => c.parent_id === comment.id).map((reply: any) => (
+                    <div key={reply.id} className="flex gap-3 ml-11">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0">
+                        <span className="text-[10px] right font-bold text-gray-400">
+                          {reply.author?.[0]?.toUpperCase() || 'U'}
+                        </span>
                       </div>
-                      <div className="flex gap-3 mt-1 text-xs text-gray-500 font-medium">
-                        <span>{new Date(comment.created_at).toLocaleDateString('ko-KR')}</span>
-                        <button className="font-bold text-gray-400 hover:text-gray-600">답글 달기</button>
+                      <div className="flex-1">
+                          <div className="text-sm leading-tight text-gray-900">
+                            <span className="font-bold mr-2">{reply.author}</span>
+                            {reply.content}
+                          </div>
+                          <div className="flex gap-3 mt-1 text-xs text-gray-500 font-medium">
+                            <span>{new Date(reply.created_at).toLocaleDateString('ko-KR')}</span>
+                            <button onClick={() => { setReplyToId(comment.id); setReplyToAuthor(comment.author); commentInputRef.current?.focus(); }} className="font-bold text-gray-400 hover:text-gray-600">답글 달기</button>
+                          </div>
                       </div>
-                  </div>
-                  <button className="text-gray-300 hover:text-rose-500 self-start mt-0.5"><Heart size={14} /></button>
+                      <div className="flex flex-col items-center ml-2 mt-1">
+                        <button onClick={() => toggleCommentLike(reply.id)} className="text-gray-300 hover:text-rose-500 active:scale-95 transition-transform">
+                           <Heart size={14} fill={reply.isLiked ? '#f43f5e' : 'none'} className={reply.isLiked ? 'text-rose-500' : ''} />
+                        </button>
+                        {reply.likes > 0 && <span className="text-[10px] text-gray-400 font-bold mt-0.5">{reply.likes}</span>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))}
               {currentComments.length === 0 && (

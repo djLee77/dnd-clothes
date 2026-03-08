@@ -126,6 +126,27 @@ const pool = new Pool({
         } catch (e) {
             // Column already exists
         }
+
+        try {
+            await pool.query('ALTER TABLE post_comments ADD COLUMN parent_id INTEGER REFERENCES post_comments (id) ON DELETE CASCADE');
+        } catch (e) {
+            // Column already exists
+        }
+
+        try {
+            await pool.query('ALTER TABLE post_comments ADD COLUMN likes INTEGER DEFAULT 0');
+        } catch (e) {
+            // Column already exists
+        }
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS comment_likes (
+                comment_id INTEGER NOT NULL REFERENCES post_comments (id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (comment_id, user_id)
+            )
+        `);
         console.log('Connected to PostgreSQL database');
     } catch (err) {
         console.error('Database initialization failed:', err);
@@ -556,7 +577,7 @@ app.post('/api/posts/:id/like', authenticateToken, async (req, res) => {
 });
 
 // Get Post Comments
-app.get('/api/posts/:id/comments', async (req, res) => {
+app.get('/api/posts/:id/comments', optionalAuthenticateToken, async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT c.*, u.username as author
@@ -566,7 +587,22 @@ app.get('/api/posts/:id/comments', async (req, res) => {
             ORDER BY c.created_at ASC
         `, [req.params.id]);
 
-        res.json(result.rows);
+        let comments = result.rows;
+
+        if (req.user) {
+            const userId = req.user.userId;
+            const likesResult = await pool.query('SELECT comment_id FROM comment_likes WHERE user_id = $1', [userId]);
+            const likedCommentIds = new Set(likesResult.rows.map(r => r.comment_id));
+
+            comments = comments.map(c => ({
+                ...c,
+                isLiked: likedCommentIds.has(c.id)
+            }));
+        } else {
+            comments = comments.map(c => ({ ...c, isLiked: false }));
+        }
+
+        res.json(comments);
     } catch (err) {
         console.error('Failed to fetch comments:', err);
         res.status(500).json({ error: 'Failed to fetch comments' });
@@ -575,7 +611,7 @@ app.get('/api/posts/:id/comments', async (req, res) => {
 
 // Add Post Comment
 app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
-    const { content } = req.body;
+    const { content, parent_id } = req.body;
     const postId = req.params.id;
     const userId = req.user.userId;
 
@@ -583,8 +619,8 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
 
     try {
         await pool.query(
-            'INSERT INTO post_comments (post_id, user_id, content) VALUES ($1, $2, $3)',
-            [postId, userId, content]
+            'INSERT INTO post_comments (post_id, user_id, content, parent_id) VALUES ($1, $2, $3, $4)',
+            [postId, userId, content, parent_id || null]
         );
 
         // Update comments count on post
@@ -596,6 +632,36 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
     } catch (err) {
         console.error('Failed to add comment:', err);
         res.status(500).json({ error: 'Failed to add comment' });
+    }
+});
+
+// Toggle Comment Like
+app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
+    const commentId = req.params.id;
+    const userId = req.user.userId;
+
+    try {
+        // Check if like exists
+        const likeResult = await pool.query('SELECT * FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [commentId, userId]);
+
+        let liked = false;
+        if (likeResult.rows.length > 0) {
+            // Unlike
+            await pool.query('DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [commentId, userId]);
+            await pool.query('UPDATE post_comments SET likes = likes - 1 WHERE id = $1', [commentId]);
+            liked = false;
+        } else {
+            // Like
+            await pool.query('INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2)', [commentId, userId]);
+            await pool.query('UPDATE post_comments SET likes = likes + 1 WHERE id = $1', [commentId]);
+            liked = true;
+        }
+
+        const updatedComment = await pool.query('SELECT likes FROM post_comments WHERE id = $1', [commentId]);
+        res.json({ liked, likes: updatedComment.rows[0].likes });
+    } catch (err) {
+        console.error('Failed to toggle comment like:', err);
+        res.status(500).json({ error: 'Failed to toggle comment like' });
     }
 });
 
