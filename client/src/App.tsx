@@ -9,6 +9,7 @@ import { CommunityPage } from './pages/CommunityPage'
 import { CreatePostPage } from './pages/CreatePostPage'
 import { PostDetailPage } from './pages/PostDetailPage'
 import { MyPage } from './pages/MyPage'
+import { UserProfilePage } from './pages/UserProfilePage'
 import { MobileDesktopOnly } from './components/ui/MobileDesktopOnly'
 
 function App() {
@@ -62,6 +63,8 @@ function App() {
         } />
         {/* Redirect legacy /community to / */}
         <Route path="/community" element={<Navigate to="/" replace />} />
+        {/* User Profile Detail */}
+        <Route path="/profile/:handle" element={<UserProfilePage />} />
         {/* Post Detail */}
         <Route path="/post/:id" element={<PostDetailPage />} />
         <Route path="/login" element={<LoginPage />} />

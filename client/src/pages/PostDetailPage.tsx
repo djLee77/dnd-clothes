@@ -128,7 +128,12 @@ export const PostDetailPage = () => {
 
         {/* Post Author Info */}
         <div className="px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div 
+              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => {
+                if (currentPost.author_handle) navigate(`/profile/${currentPost.author_handle.replace('#', '')}`)
+              }}
+            >
               <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center border border-gray-200 overflow-hidden">
                 {currentPost.author_profile_image ? (
                   <img src={currentPost.author_profile_image} alt={currentPost.author} className="w-full h-full object-cover" />
@@ -288,7 +293,12 @@ export const PostDetailPage = () => {
               {parentComments.map((comment: any) => (
                 <div key={comment.id} className="flex flex-col gap-3">
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
+                    <div 
+                      className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => {
+                        if (comment.author_handle) navigate(`/profile/${comment.author_handle.replace('#', '')}`)
+                      }}
+                    >
                       {comment.author_profile_image ? (
                         <img src={comment.author_profile_image} alt={comment.author} className="w-full h-full object-cover" />
                       ) : (
@@ -299,7 +309,14 @@ export const PostDetailPage = () => {
                     </div>
                     <div className="flex-1">
                         <div className="text-sm leading-tight text-gray-900">
-                          <span className="font-bold mr-1">{comment.author}</span>
+                          <span 
+                            className="font-bold mr-1 cursor-pointer hover:underline"
+                            onClick={() => {
+                              if (comment.author_handle) navigate(`/profile/${comment.author_handle.replace('#', '')}`)
+                            }}
+                          >
+                            {comment.author}
+                          </span>
                           {comment.author_handle && <span className="text-xs font-medium text-gray-400 mr-2">{comment.author_handle}</span>}
                           {!comment.author_handle && <span className="mr-2"></span>}
                           {comment.content}
@@ -320,7 +337,12 @@ export const PostDetailPage = () => {
                   {/* Replies */}
                   {childComments.filter((c: any) => c.parent_id === comment.id).map((reply: any) => (
                     <div key={reply.id} className="flex gap-3 ml-11">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
+                      <div 
+                        className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => {
+                          if (reply.author_handle) navigate(`/profile/${reply.author_handle.replace('#', '')}`)
+                        }}
+                      >
                         {reply.author_profile_image ? (
                           <img src={reply.author_profile_image} alt={reply.author} className="w-full h-full object-cover" />
                         ) : (
@@ -331,7 +353,14 @@ export const PostDetailPage = () => {
                       </div>
                       <div className="flex-1">
                           <div className="text-sm leading-tight text-gray-900">
-                            <span className="font-bold mr-1">{reply.author}</span>
+                            <span 
+                              className="font-bold mr-1 cursor-pointer hover:underline"
+                              onClick={() => {
+                                if (reply.author_handle) navigate(`/profile/${reply.author_handle.replace('#', '')}`)
+                              }}
+                            >
+                              {reply.author}
+                            </span>
                             {reply.author_handle && <span className="text-xs font-medium text-gray-400 mr-2">{reply.author_handle}</span>}
                             {!reply.author_handle && <span className="mr-2"></span>}
                             {reply.content}

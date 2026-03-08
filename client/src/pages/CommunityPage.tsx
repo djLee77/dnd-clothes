@@ -224,7 +224,13 @@ export const CommunityPage = () => {
 
                   {/* Footer */}
                   <div className="flex items-center justify-between mt-5 pt-5 border-t border-gray-50">
-                    <div className="flex items-center gap-3">
+                    <div 
+                      className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (post.author_handle) navigate(`/profile/${post.author_handle.replace('#', '')}`)
+                      }}
+                    >
                       <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
                         {post.author_profile_image ? (
                            <img src={post.author_profile_image} alt={post.author} className="w-full h-full object-cover" />
@@ -266,7 +272,13 @@ export const CommunityPage = () => {
               <div className="flex flex-col sm:hidden">
                 {/* Header (Author) */}
                 <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (post.author_handle) navigate(`/profile/${post.author_handle.replace('#', '')}`)
+                    }}
+                  >
                     <div className="w-9 h-9 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
                       {post.author_profile_image ? (
                          <img src={post.author_profile_image} alt={post.author} className="w-full h-full object-cover" />
@@ -343,20 +355,6 @@ export const CommunityPage = () => {
               </div>
             </article>
           ))}
-        </div>
-
-        {/* Coming Soon Notice */}
-        <div className="mt-10 sm:mt-16 text-center">
-          <div className="inline-flex flex-col items-center gap-3 sm:gap-4 px-8 sm:px-12 py-8 sm:py-10 bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-xl sm:rounded-2xl flex items-center justify-center">
-              <Sparkles size={22} className="text-violet-500 sm:hidden" />
-              <Sparkles size={28} className="text-violet-500 hidden sm:block" />
-            </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-extrabold text-gray-900 mb-1">더 많은 기능이 준비 중이에요!</h3>
-              <p className="text-xs sm:text-sm text-gray-400 font-medium">곧 스크랩을 게시하고 공유할 수 있게 됩니다.</p>
-            </div>
-          </div>
         </div>
       </main>
     </div>
