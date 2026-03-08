@@ -10,6 +10,8 @@
 
 <img width="1367" height="895" alt="image" src="https://github.com/user-attachments/assets/13f95483-3f1a-4209-aa9e-8d2cdf39cb69" />
 
+🔗 **운영 사이트 (배포 URL)**: [https://dnd-clothes.onrender.com/login](https://dnd-clothes.onrender.com/login)
+
 ---
 ## 🌟 주요 기능 (Key Features)
 
