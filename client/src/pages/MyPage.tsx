@@ -143,10 +143,10 @@ export const MyPage = () => {
                   게시물 <span className="font-bold text-black">{myPosts.length}</span>
                 </div>
                 <div className="text-sm">
-                  팔로워 <span className="font-bold text-black">0</span>
+                  팔로워 <span className="font-bold text-black">{user?.followers_count || 0}</span>
                 </div>
                 <div className="text-sm">
-                  팔로우 <span className="font-bold text-black">0</span>
+                  팔로우 <span className="font-bold text-black">{user?.following_count || 0}</span>
                 </div>
               </div>
               

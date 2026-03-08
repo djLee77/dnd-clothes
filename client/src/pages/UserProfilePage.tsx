@@ -9,7 +9,7 @@ export const UserProfilePage = () => {
   const { handle } = useParams()
   const navigate = useNavigate()
   const { posts, fetchPosts } = usePostStore()
-  const { user: currentUser } = useAuthStore()
+  const { user: currentUser, token } = useAuthStore()
   const [profileUser, setProfileUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -24,7 +24,9 @@ export const UserProfilePage = () => {
       const fetchProfile = async () => {
         try {
           const API_URL = import.meta.env.VITE_API_URL || '/api'
-          const res = await fetch(`${API_URL}/users/${handle}`)
+          const res = await fetch(`${API_URL}/users/${handle}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          })
           if (res.ok) {
             const data = await res.json()
             setProfileUser(data)
@@ -40,7 +42,34 @@ export const UserProfilePage = () => {
       }
       fetchProfile()
     }
-  }, [handle, fetchPosts, currentUser, navigate])
+  }, [handle, fetchPosts, currentUser?.handle, token, navigate])
+
+  const toggleFollow = async () => {
+    if (!currentUser || !profileUser) {
+      alert('로그인이 필요한 기능입니다.');
+      return navigate('/login');
+    }
+    
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
+      const res = await fetch(`${API_URL}/users/${handle}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfileUser((prev: any) => ({
+          ...prev,
+          isFollowing: data.isFollowing,
+          followers_count: data.isFollowing ? prev.followers_count + 1 : prev.followers_count - 1
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   if (loading) {
     return (
@@ -92,6 +121,21 @@ export const UserProfilePage = () => {
                      <span className="text-lg font-medium text-gray-400/80">{profileUser.handle}</span>
                   )}
                 </div>
+                {currentUser && currentUser.handle !== profileUser.handle && (
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={toggleFollow}
+                      className={`px-6 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                        profileUser.isFollowing
+                          ? 'bg-gray-100 text-gray-900 hover:bg-rose-50 hover:text-rose-500'
+                          : 'bg-violet-500 text-white hover:bg-violet-600 shadow-md shadow-violet-200'
+                      }`}
+                    >
+                      {profileUser.isFollowing ? '언팔로우' : '팔로우'}
+                    </button>
+                    <button className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 hover:text-black rounded-lg text-sm font-bold text-gray-900 transition-colors">쪽지</button>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-center sm:justify-start items-center gap-8 mb-6">
@@ -99,10 +143,10 @@ export const UserProfilePage = () => {
                   게시물 <span className="font-bold text-black">{userPosts.length}</span>
                 </div>
                 <div className="text-sm">
-                  팔로워 <span className="font-bold text-black">0</span>
+                  팔로워 <span className="font-bold text-black">{profileUser.followers_count || 0}</span>
                 </div>
                 <div className="text-sm">
-                  팔로우 <span className="font-bold text-black">0</span>
+                  팔로우 <span className="font-bold text-black">{profileUser.following_count || 0}</span>
                 </div>
               </div>
               

@@ -8,6 +8,8 @@ interface User {
   profile_image?: string | null;
   handle?: string;
   bio?: string | null;
+  followers_count?: number;
+  following_count?: number;
 }
 
 interface AuthState {

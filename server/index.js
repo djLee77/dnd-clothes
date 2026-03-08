@@ -173,6 +173,15 @@ const pool = new Pool({
                 PRIMARY KEY (comment_id, user_id)
             )
         `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS follows (
+                follower_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                following_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (follower_id, following_id)
+            )
+        `);
         console.log('Connected to PostgreSQL database');
     } catch (err) {
         console.error('Database initialization failed:', err);
@@ -376,21 +385,73 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, email, username, profile_image, handle, bio FROM users WHERE id = $1', [req.user.userId]);
+        const result = await pool.query(`
+            SELECT 
+                u.id, u.email, u.username, u.profile_image, u.handle, u.bio,
+                (SELECT COUNT(*)::int FROM follows WHERE following_id = u.id) as followers_count,
+                (SELECT COUNT(*)::int FROM follows WHERE follower_id = u.id) as following_count
+            FROM users u WHERE u.id = $1
+        `, [req.user.userId]);
         res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch user context' });
     }
 });
 
-app.get('/api/users/:handle', async (req, res) => {
+app.get('/api/users/:handle', optionalAuthenticateToken, async (req, res) => {
     try {
         const handle = '#' + req.params.handle;
-        const result = await pool.query('SELECT id, username, profile_image, handle, bio FROM users WHERE handle = $1', [handle]);
+        const result = await pool.query(`
+            SELECT 
+                u.id, u.username, u.profile_image, u.handle, u.bio,
+                (SELECT COUNT(*)::int FROM follows WHERE following_id = u.id) as followers_count,
+                (SELECT COUNT(*)::int FROM follows WHERE follower_id = u.id) as following_count
+            FROM users u WHERE u.handle = $1
+        `, [handle]);
+
         if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-        res.json(result.rows[0]);
+
+        let profileUser = result.rows[0];
+        let isFollowing = false;
+
+        if (req.user) {
+            const followResult = await pool.query('SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = $2', [req.user.userId, profileUser.id]);
+            isFollowing = followResult.rows.length > 0;
+        }
+
+        res.json({ ...profileUser, isFollowing });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Failed to fetch user profile' });
+    }
+});
+
+app.post('/api/users/:handle/follow', authenticateToken, async (req, res) => {
+    try {
+        const targetHandle = '#' + req.params.handle;
+        const targetRes = await pool.query('SELECT id FROM users WHERE handle = $1', [targetHandle]);
+        if (targetRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+        const targetUserId = targetRes.rows[0].id;
+        const followerId = req.user.userId;
+
+        if (targetUserId === followerId) return res.status(400).json({ error: 'Cannot follow yourself' });
+
+        const followCheck = await pool.query('SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = $2', [followerId, targetUserId]);
+
+        let isFollowing = false;
+        if (followCheck.rows.length > 0) {
+            await pool.query('DELETE FROM follows WHERE follower_id = $1 AND following_id = $2', [followerId, targetUserId]);
+            isFollowing = false;
+        } else {
+            await pool.query('INSERT INTO follows (follower_id, following_id) VALUES ($1, $2)', [followerId, targetUserId]);
+            isFollowing = true;
+        }
+
+        res.json({ isFollowing });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to toggle follow' });
     }
 });
 
