@@ -455,6 +455,52 @@ app.post('/api/users/:handle/follow', authenticateToken, async (req, res) => {
     }
 });
 
+app.get('/api/users/:handle/followers', async (req, res) => {
+    try {
+        const handle = '#' + req.params.handle;
+        const result = await pool.query('SELECT id FROM users WHERE handle = $1', [handle]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+        const userId = result.rows[0].id;
+
+        const followers = await pool.query(`
+            SELECT u.id, u.username, u.profile_image, u.handle, u.bio
+            FROM users u
+            JOIN follows f ON u.id = f.follower_id
+            WHERE f.following_id = $1
+            ORDER BY f.created_at DESC
+        `, [userId]);
+
+        res.json(followers.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch followers' });
+    }
+});
+
+app.get('/api/users/:handle/following', async (req, res) => {
+    try {
+        const handle = '#' + req.params.handle;
+        const result = await pool.query('SELECT id FROM users WHERE handle = $1', [handle]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+        const userId = result.rows[0].id;
+
+        const following = await pool.query(`
+            SELECT u.id, u.username, u.profile_image, u.handle, u.bio
+            FROM users u
+            JOIN follows f ON u.id = f.following_id
+            WHERE f.follower_id = $1
+            ORDER BY f.created_at DESC
+        `, [userId]);
+
+        res.json(following.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch following' });
+    }
+});
+
 app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     const { username, handle, bio, profile_image } = req.body;
     try {

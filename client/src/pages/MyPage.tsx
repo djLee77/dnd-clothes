@@ -4,6 +4,7 @@ import { Navbar } from '../components/ui/Navbar'
 import { useAuthStore } from '../store/authStore'
 import { usePostStore } from '../store/postStore'
 import { Settings, Heart, MessageSquare, Trash2, LayoutGrid, Camera, X } from 'lucide-react'
+import { FollowListModal } from '../components/ui/FollowListModal'
 
 export const MyPage = () => {
   const { user, updateUser, token, handleUnauthorized } = useAuthStore()
@@ -16,6 +17,9 @@ export const MyPage = () => {
   const [editBio, setEditBio] = useState('')
   const [editProfileImage, setEditProfileImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  const [isFollowListOpen, setIsFollowListOpen] = useState(false)
+  const [followListType, setFollowListType] = useState<'followers' | 'following'>('followers')
   const openEditModal = () => {
     setEditUsername(user?.username || '')
     setEditHandle(user?.handle || '')
@@ -142,10 +146,22 @@ export const MyPage = () => {
                 <div className="text-sm">
                   게시물 <span className="font-bold text-black">{myPosts.length}</span>
                 </div>
-                <div className="text-sm">
+                <div 
+                  className="text-sm cursor-pointer hover:opacity-70 transition-opacity"
+                  onClick={() => {
+                    setFollowListType('followers')
+                    setIsFollowListOpen(true)
+                  }}
+                >
                   팔로워 <span className="font-bold text-black">{user?.followers_count || 0}</span>
                 </div>
-                <div className="text-sm">
+                <div 
+                  className="text-sm cursor-pointer hover:opacity-70 transition-opacity"
+                  onClick={() => {
+                    setFollowListType('following')
+                    setIsFollowListOpen(true)
+                  }}
+                >
                   팔로우 <span className="font-bold text-black">{user?.following_count || 0}</span>
                 </div>
               </div>
@@ -308,6 +324,15 @@ export const MyPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {user?.handle && (
+        <FollowListModal
+          isOpen={isFollowListOpen}
+          onClose={() => setIsFollowListOpen(false)}
+          type={followListType}
+          handle={user.handle}
+        />
       )}
     </div>
   )

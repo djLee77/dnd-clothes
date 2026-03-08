@@ -4,6 +4,7 @@ import { Navbar } from '../components/ui/Navbar'
 import { usePostStore } from '../store/postStore'
 import { Heart, MessageSquare, LayoutGrid } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { FollowListModal } from '../components/ui/FollowListModal'
 
 export const UserProfilePage = () => {
   const { handle } = useParams()
@@ -12,6 +13,8 @@ export const UserProfilePage = () => {
   const { user: currentUser, token } = useAuthStore()
   const [profileUser, setProfileUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isFollowListOpen, setIsFollowListOpen] = useState(false)
+  const [followListType, setFollowListType] = useState<'followers' | 'following'>('followers')
 
   useEffect(() => {
     fetchPosts()
@@ -142,10 +145,22 @@ export const UserProfilePage = () => {
                 <div className="text-sm">
                   게시물 <span className="font-bold text-black">{userPosts.length}</span>
                 </div>
-                <div className="text-sm">
+                <div 
+                  className="text-sm cursor-pointer hover:opacity-70 transition-opacity"
+                  onClick={() => {
+                    setFollowListType('followers')
+                    setIsFollowListOpen(true)
+                  }}
+                >
                   팔로워 <span className="font-bold text-black">{profileUser.followers_count || 0}</span>
                 </div>
-                <div className="text-sm">
+                <div 
+                  className="text-sm cursor-pointer hover:opacity-70 transition-opacity"
+                  onClick={() => {
+                    setFollowListType('following')
+                    setIsFollowListOpen(true)
+                  }}
+                >
                   팔로우 <span className="font-bold text-black">{profileUser.following_count || 0}</span>
                 </div>
               </div>
@@ -207,6 +222,15 @@ export const UserProfilePage = () => {
           )}
         </div>
       </main>
+
+      {profileUser?.handle && (
+        <FollowListModal
+          isOpen={isFollowListOpen}
+          onClose={() => setIsFollowListOpen(false)}
+          type={followListType}
+          handle={profileUser.handle}
+        />
+      )}
     </div>
   )
 }
