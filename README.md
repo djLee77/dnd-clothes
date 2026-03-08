@@ -8,8 +8,9 @@
 
 > 나만의 옷장을 관리하고, 원하는 대로 옷을 배치해볼 수 있는 커스텀 코디 스크랩보드 플랫폼입니다. 사진을 올리기만 하면 AI가 배경을 자동으로 제거해주어 간편하게 나만의 룩북을 만들 수 있습니다.
 
----
+<img width="1367" height="895" alt="image" src="https://github.com/user-attachments/assets/13f95483-3f1a-4209-aa9e-8d2cdf39cb69" />
 
+---
 ## 🌟 주요 기능 (Key Features)
 
 ### 1. 스타일 커뮤니티 (Community Feed)
