@@ -225,11 +225,18 @@ export const CommunityPage = () => {
                   {/* Footer */}
                   <div className="flex items-center justify-between mt-5 pt-5 border-t border-gray-50">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
-                        <User size={14} className="text-gray-500" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
+                        {post.author_profile_image ? (
+                           <img src={post.author_profile_image} alt={post.author} className="w-full h-full object-cover" />
+                        ) : (
+                           <User size={14} className="text-gray-500" />
+                        )}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-gray-700">{post.author}</p>
+                        <p className="text-xs font-bold text-gray-700">
+                          {post.author}
+                          {post.author_handle && <span className="ml-1.5 font-medium text-gray-400/80">{post.author_handle}</span>}
+                        </p>
                         <p className="text-[11px] text-gray-300 font-medium">{formatDate(post.created_at)}</p>
                       </div>
                     </div>
@@ -261,10 +268,17 @@ export const CommunityPage = () => {
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
-                      <User size={16} className="text-gray-400" />
+                      {post.author_profile_image ? (
+                         <img src={post.author_profile_image} alt={post.author} className="w-full h-full object-cover" />
+                      ) : (
+                         <User size={16} className="text-gray-400" />
+                      )}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-900 leading-tight">{post.author}</span>
+                      <span className="text-xs font-bold text-gray-900 leading-tight">
+                        {post.author}
+                        {post.author_handle && <span className="ml-1.5 font-medium text-gray-400/80">{post.author_handle}</span>}
+                      </span>
                       <span className="text-[10px] text-gray-400 font-medium mt-0.5">{formatDate(post.created_at)}</span>
                     </div>
                   </div>

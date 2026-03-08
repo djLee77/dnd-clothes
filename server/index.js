@@ -44,9 +44,35 @@ const pool = new Pool({
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 username TEXT,
+                profile_image TEXT,
+                handle TEXT UNIQUE,
+                bio TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Add columns if they do not exist
+        try {
+            await pool.query('ALTER TABLE users ADD COLUMN profile_image TEXT');
+        } catch (e) { }
+        try {
+            await pool.query('ALTER TABLE users ADD COLUMN handle TEXT UNIQUE');
+        } catch (e) { }
+        try {
+            await pool.query('ALTER TABLE users ADD COLUMN bio TEXT');
+        } catch (e) { }
+
+        // Populate handles for existing users if any are empty
+        try {
+            const usersRes = await pool.query('SELECT id FROM users WHERE handle IS NULL');
+            for (let u of usersRes.rows) {
+                const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+                await pool.query('UPDATE users SET handle = $1 WHERE id = $2', [`#USER_${randomStr}`, u.id]);
+            }
+
+            // Fix any handles missing the '#' prefix
+            await pool.query(`UPDATE users SET handle = '#' || handle WHERE handle NOT LIKE '#%'`);
+        } catch (e) { console.error(e) }
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS scraps (
@@ -202,10 +228,12 @@ app.post('/api/auth/register', async (req, res) => {
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const result = await pool.query('INSERT INTO users (email, password, username) VALUES ($1, $2, $3) RETURNING id', [email, hashedPassword, username]);
+        const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const handle = `#USER_${randomStr}`;
+        const result = await pool.query('INSERT INTO users (email, password, username, handle) VALUES ($1, $2, $3, $4) RETURNING id', [email, hashedPassword, username, handle]);
         const userId = result.rows[0].id;
         const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '24h' });
-        res.status(201).json({ message: 'User registered successfully', token, user: { id: userId, email, username } });
+        res.status(201).json({ message: 'User registered successfully', token, user: { id: userId, email, username, handle, profile_image: null, bio: null } });
     } catch (err) {
         if (err.message.includes('unique constraint') || err.message.includes('UNIQUE constraint')) return res.status(400).json({ error: 'Email already exists' });
         res.status(500).json({ error: 'Failed to register user' });
@@ -221,7 +249,7 @@ app.post('/api/auth/login', async (req, res) => {
         const user = result.rows[0];
         if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: 'Invalid email or password' });
         const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
-        res.json({ message: 'Login successful', token, user: { id: user.id, email: user.email, username: user.username } });
+        res.json({ message: 'Login successful', token, user: { id: user.id, email: user.email, username: user.username, profile_image: user.profile_image, handle: user.handle, bio: user.bio } });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to login' });
@@ -348,10 +376,26 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, email, username FROM users WHERE id = $1', [req.user.userId]);
+        const result = await pool.query('SELECT id, email, username, profile_image, handle, bio FROM users WHERE id = $1', [req.user.userId]);
         res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch user context' });
+    }
+});
+
+app.put('/api/auth/profile', authenticateToken, async (req, res) => {
+    const { username, handle, bio, profile_image } = req.body;
+    try {
+        // Validation for handle format can be added here if necessary
+        const result = await pool.query(
+            'UPDATE users SET username = COALESCE($1, username), handle = COALESCE($2, handle), bio = COALESCE($3, bio), profile_image = COALESCE($4, profile_image) WHERE id = $5 RETURNING id, email, username, profile_image, handle, bio',
+            [username, handle, bio, profile_image, req.user.userId]
+        );
+        res.json({ message: 'Profile updated successfully', user: result.rows[0] });
+    } catch (err) {
+        if (err.message.includes('unique constraint') || err.message.includes('UNIQUE constraint')) return res.status(400).json({ error: 'Handle already exists. Please choose another.' });
+        console.error('Failed to update profile:', err);
+        res.status(500).json({ error: 'Failed to update profile' });
     }
 });
 
@@ -469,7 +513,7 @@ app.get('/api/posts', async (req, res) => {
     try {
         // Does not require authentication to read posts
         const result = await pool.query(`
-            SELECT p.*, u.username as author
+            SELECT p.*, u.username as author, u.profile_image as author_profile_image, u.handle as author_handle
             FROM posts p
             JOIN users u ON p.user_id = u.id
             ORDER BY p.created_at DESC
@@ -486,7 +530,7 @@ app.get('/api/posts/:id', optionalAuthenticateToken, async (req, res) => {
         await pool.query('UPDATE posts SET views = views + 1 WHERE id = $1', [req.params.id]);
 
         const result = await pool.query(`
-            SELECT p.*, u.username as author
+            SELECT p.*, u.username as author, u.profile_image as author_profile_image, u.handle as author_handle
             FROM posts p
             JOIN users u ON p.user_id = u.id
             WHERE p.id = $1
@@ -580,7 +624,7 @@ app.post('/api/posts/:id/like', authenticateToken, async (req, res) => {
 app.get('/api/posts/:id/comments', optionalAuthenticateToken, async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT c.*, u.username as author
+            SELECT c.*, u.username as author, u.profile_image as author_profile_image, u.handle as author_handle
             FROM post_comments c
             JOIN users u ON c.user_id = u.id
             WHERE c.post_id = $1

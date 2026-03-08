@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Navbar } from '../components/ui/Navbar'
 import { usePostStore } from '../store/postStore'
-import { ArrowLeft, Heart, MessageSquare, Share2, MoreHorizontal, ExternalLink, X } from 'lucide-react'
+import { useAuthStore } from '../store/authStore'
+import { ArrowLeft, Heart, MessageSquare, Share2, MoreHorizontal, ExternalLink, X, User as UserIcon } from 'lucide-react'
 
 // Helper to extract and format numbers from price strings (e.g. "1,000원", "10000", "가격미정")
 const extractPriceSum = (items: any[]) => {
@@ -26,6 +27,7 @@ export const PostDetailPage = () => {
   const [replyToAuthor, setReplyToAuthor] = useState<string | null>(null)
   const commentInputRef = useRef<HTMLInputElement>(null)
   const { currentPost, currentPostScraps, currentComments, isLiked, isLoading, fetchPost, toggleLike, toggleCommentLike, addComment, error } = usePostStore()
+  const { user } = useAuthStore()
 
   useEffect(() => {
     if (id) {
@@ -128,13 +130,18 @@ export const PostDetailPage = () => {
         <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center border border-gray-200 overflow-hidden">
-                <span className="text-sm font-black text-violet-500">
-                  {currentPost.author?.[0]?.toUpperCase() || 'U'}
-                </span>
+                {currentPost.author_profile_image ? (
+                  <img src={currentPost.author_profile_image} alt={currentPost.author} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm font-black text-violet-500">
+                    {currentPost.author?.[0]?.toUpperCase() || 'U'}
+                  </span>
+                )}
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-bold text-gray-900 leading-tight">
                   {currentPost.author}
+                  {currentPost.author_handle && <span className="ml-1.5 text-xs font-medium text-gray-400">{currentPost.author_handle}</span>}
                 </span>
                 <span className="text-xs text-gray-500">
                    {new Date(currentPost.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric'})}
@@ -250,7 +257,13 @@ export const PostDetailPage = () => {
               </div>
            )}
            <div className="flex gap-3 mb-6">
-              <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />
+              <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0 border border-gray-200 flex items-center justify-center overflow-hidden">
+                {user?.profile_image ? (
+                  <img src={user.profile_image} alt="my profile" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon size={14} className="text-gray-400" />
+                )}
+              </div>
               <div className="flex-1 flex items-center bg-gray-100 rounded-full px-4 border border-transparent focus-within:border-gray-300 transition-colors">
                  <input 
                    ref={commentInputRef}
@@ -275,14 +288,20 @@ export const PostDetailPage = () => {
               {parentComments.map((comment: any) => (
                 <div key={comment.id} className="flex flex-col gap-3">
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0">
-                      <span className="text-[10px] right font-bold text-gray-400">
-                        {comment.author?.[0]?.toUpperCase() || 'U'}
-                      </span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
+                      {comment.author_profile_image ? (
+                        <img src={comment.author_profile_image} alt={comment.author} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] font-bold text-gray-400">
+                          {comment.author?.[0]?.toUpperCase() || 'U'}
+                        </span>
+                      )}
                     </div>
                     <div className="flex-1">
                         <div className="text-sm leading-tight text-gray-900">
-                          <span className="font-bold mr-2">{comment.author}</span>
+                          <span className="font-bold mr-1">{comment.author}</span>
+                          {comment.author_handle && <span className="text-xs font-medium text-gray-400 mr-2">{comment.author_handle}</span>}
+                          {!comment.author_handle && <span className="mr-2"></span>}
                           {comment.content}
                         </div>
                         <div className="flex gap-3 mt-1 text-xs text-gray-500 font-medium">
@@ -301,14 +320,20 @@ export const PostDetailPage = () => {
                   {/* Replies */}
                   {childComments.filter((c: any) => c.parent_id === comment.id).map((reply: any) => (
                     <div key={reply.id} className="flex gap-3 ml-11">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0">
-                        <span className="text-[10px] right font-bold text-gray-400">
-                          {reply.author?.[0]?.toUpperCase() || 'U'}
-                        </span>
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
+                        {reply.author_profile_image ? (
+                          <img src={reply.author_profile_image} alt={reply.author} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[10px] font-bold text-gray-400">
+                            {reply.author?.[0]?.toUpperCase() || 'U'}
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1">
                           <div className="text-sm leading-tight text-gray-900">
-                            <span className="font-bold mr-2">{reply.author}</span>
+                            <span className="font-bold mr-1">{reply.author}</span>
+                            {reply.author_handle && <span className="text-xs font-medium text-gray-400 mr-2">{reply.author_handle}</span>}
+                            {!reply.author_handle && <span className="mr-2"></span>}
                             {reply.content}
                           </div>
                           <div className="flex gap-3 mt-1 text-xs text-gray-500 font-medium">

@@ -7,6 +7,8 @@ export interface Post {
   id: number
   user_id: number
   author: string
+  author_profile_image?: string | null
+  author_handle?: string | null
   title: string
   content: string
   tags: string[]

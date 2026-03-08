@@ -12,6 +12,15 @@ import { MyPage } from './pages/MyPage'
 import { MobileDesktopOnly } from './components/ui/MobileDesktopOnly'
 
 function App() {
+  const fetchMe = useAuthStore(state => state.fetchMe)
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated)
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchMe()
+    }
+  }, [isAuthenticated, fetchMe])
+
   return (
     <Router>
       <Routes>

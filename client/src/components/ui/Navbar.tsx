@@ -41,7 +41,13 @@ export const Navbar = () => {
                         onClick={() => navigate('/mypage')}
                         className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-black hover:bg-gray-100 rounded-xl transition-all active:scale-95 group"
                     >
-                        <UserCircle size={18} className="group-hover:text-black transition-colors" />
+                        <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-200 border border-gray-300 flex items-center justify-center">
+                          {user?.profile_image ? (
+                            <img src={user.profile_image} alt="profile" className="w-full h-full object-cover" />
+                          ) : (
+                            <UserCircle size={18} className="group-hover:text-black transition-colors" />
+                          )}
+                        </div>
                         <span className="hidden sm:inline">{user?.username || '마이페이지'}</span>
                     </button>
                     <button 

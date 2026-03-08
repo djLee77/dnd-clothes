@@ -5,6 +5,9 @@ interface User {
   id: number;
   email: string;
   username: string;
+  profile_image?: string | null;
+  handle?: string;
+  bio?: string | null;
 }
 
 interface AuthState {
@@ -12,6 +15,8 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   setAuth: (user: User, token: string) => void;
+  updateUser: (user: User) => void;
+  fetchMe: () => Promise<void>;
   logout: () => void;
   handleUnauthorized: () => void;
 }
@@ -23,6 +28,27 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
       setAuth: (user, token) => set({ user, token, isAuthenticated: true }),
+      updateUser: (user) => set({ user }),
+      fetchMe: async () => {
+        const state = useAuthStore.getState();
+        if (!state.token) return;
+        try {
+          const API_URL = import.meta.env.VITE_API_URL || '/api';
+          const res = await fetch(`${API_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${state.token}` }
+          });
+          if (res.status === 401 || res.status === 403) {
+            state.handleUnauthorized();
+            return;
+          }
+          if (res.ok) {
+            const user = await res.json();
+            set({ user });
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      },
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
       handleUnauthorized: () => {
         set({ user: null, token: null, isAuthenticated: false });
