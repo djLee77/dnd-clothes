@@ -40,8 +40,26 @@ export const PostDetailPage = () => {
     return (
       <div className="min-h-screen bg-[#fafafa]">
         <Navbar />
-        <div className="pt-24 flex justify-center items-center h-40">
-          <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        <div className="pt-24 flex flex-col items-center justify-center h-[calc(100vh-6rem)] gap-6 animate-in fade-in duration-500">
+          <div className="relative w-12 h-12 flex items-center justify-center">
+            <svg className="absolute inset-0 w-full h-full text-violet-100/60" viewBox="0 0 50 50">
+              <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" stroke="currentColor"></circle>
+            </svg>
+            <svg className="absolute inset-0 w-full h-full text-violet-500 animate-[spin_1s_linear_infinite]" viewBox="0 0 50 50">
+              <circle 
+                cx="25" cy="25" r="20" 
+                fill="none" 
+                strokeWidth="4" 
+                strokeLinecap="round" 
+                stroke="currentColor" 
+                strokeDasharray="30 150"
+                className="animate-[pulse_1.5s_ease-in-out_infinite]"
+              ></circle>
+            </svg>
+          </div>
+          <p className="text-sm font-extrabold text-gray-400 tracking-tight animate-pulse">
+            게시글을 불러오는 중...
+          </p>
         </div>
       </div>
     )

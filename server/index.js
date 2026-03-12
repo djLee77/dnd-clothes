@@ -182,6 +182,18 @@ const pool = new Pool({
                 PRIMARY KEY (follower_id, following_id)
             )
         `);
+
+        // Create indexes to optimize query speed
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_post_likes_user_id ON post_likes(user_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_comment_likes_user_id ON comment_likes(user_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_follows_follower_id ON follows(follower_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_follows_following_id ON follows(following_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_scraps_user_id ON scraps(user_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_assets_category_id ON assets("categoryId")');
+
         console.log('Connected to PostgreSQL database');
     } catch (err) {
         console.error('Database initialization failed:', err);
@@ -644,36 +656,47 @@ app.get('/api/posts', async (req, res) => {
 
 app.get('/api/posts/:id', optionalAuthenticateToken, async (req, res) => {
     try {
-        // Increment view count
-        await pool.query('UPDATE posts SET views = views + 1 WHERE id = $1', [req.params.id]);
-
-        const result = await pool.query(`
-            SELECT p.*, u.username as author, u.profile_image as author_profile_image, u.handle as author_handle
-            FROM posts p
-            JOIN users u ON p.user_id = u.id
-            WHERE p.id = $1
-        `, [req.params.id]);
+        // Run update and select in parallel to reduce database roundtrips
+        const [updateRes, result] = await Promise.all([
+            pool.query('UPDATE posts SET views = views + 1 WHERE id = $1', [req.params.id]),
+            pool.query(`
+                SELECT p.*, u.username as author, u.profile_image as author_profile_image, u.handle as author_handle
+                FROM posts p
+                JOIN users u ON p.user_id = u.id
+                WHERE p.id = $1
+            `, [req.params.id])
+        ]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Post not found' });
         }
 
         const post = result.rows[0];
+
+        // Optimistically apply the incremented view count for the response
+        post.views += 1;
+
         const scrapIds = JSON.parse(post.scrap_ids || '[]');
 
         let scraps = [];
+        let isLiked = false;
+
+        const promises = [];
         if (scrapIds.length > 0) {
-            const scrapsResult = await pool.query('SELECT * FROM scraps WHERE id = ANY($1::int[])', [scrapIds]);
-            scraps = scrapsResult.rows;
+            promises.push(
+                pool.query('SELECT * FROM scraps WHERE id = ANY($1::int[])', [scrapIds])
+                    .then(r => scraps = r.rows)
+            );
         }
 
-        let isLiked = false;
         if (req.user) {
-            const likeResult = await pool.query('SELECT 1 FROM post_likes WHERE post_id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
-            if (likeResult.rows.length > 0) {
-                isLiked = true;
-            }
+            promises.push(
+                pool.query('SELECT 1 FROM post_likes WHERE post_id = $1 AND user_id = $2', [req.params.id, req.user.userId])
+                    .then(r => isLiked = r.rows.length > 0)
+            );
         }
+
+        await Promise.all(promises);
 
         res.json({ post, scraps, isLiked });
     } catch (err) {
@@ -751,9 +774,14 @@ app.get('/api/posts/:id/comments', optionalAuthenticateToken, async (req, res) =
 
         let comments = result.rows;
 
-        if (req.user) {
+        if (req.user && comments.length > 0) {
             const userId = req.user.userId;
-            const likesResult = await pool.query('SELECT comment_id FROM comment_likes WHERE user_id = $1', [userId]);
+            const commentIds = comments.map(c => c.id);
+            // Fetch only likes for the comments shown on this page, not all likes by the user
+            const likesResult = await pool.query(
+                'SELECT comment_id FROM comment_likes WHERE user_id = $1 AND comment_id = ANY($2::int[])',
+                [userId, commentIds]
+            );
             const likedCommentIds = new Set(likesResult.rows.map(r => r.comment_id));
 
             comments = comments.map(c => ({

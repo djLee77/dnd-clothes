@@ -19,7 +19,7 @@ const CATEGORY_FILTERS = [
 
 export const CommunityPage = () => {
   const navigate = useNavigate()
-  const { posts, fetchPosts } = usePostStore()
+  const { posts, fetchPosts, isLoading } = usePostStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortType>('latest')
@@ -168,7 +168,30 @@ export const CommunityPage = () => {
         </div>
 
         {/* Posts List */}
-        <div className="space-y-4 animate-fade-in">
+        {isLoading && posts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 gap-6 animate-in fade-in duration-500">
+            <div className="relative w-12 h-12 flex items-center justify-center">
+              <svg className="absolute inset-0 w-full h-full text-gray-200/60" viewBox="0 0 50 50">
+                <circle cx="25" cy="25" r="20" fill="none" strokeWidth="4" stroke="currentColor"></circle>
+              </svg>
+              <svg className="absolute inset-0 w-full h-full text-violet-500 animate-[spin_1s_linear_infinite]" viewBox="0 0 50 50">
+                <circle 
+                  cx="25" cy="25" r="20" 
+                  fill="none" 
+                  strokeWidth="4" 
+                  strokeLinecap="round" 
+                  stroke="currentColor" 
+                  strokeDasharray="30 150"
+                  className="animate-[pulse_1.5s_ease-in-out_infinite]"
+                ></circle>
+              </svg>
+            </div>
+            <p className="text-sm font-extrabold text-gray-400 tracking-tight animate-pulse">
+              커뮤니티 피드를 불러오고 있어요...
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4 animate-fade-in">
           {filteredPosts.map((post, index) => (
             <article 
               key={post.id}
@@ -355,7 +378,8 @@ export const CommunityPage = () => {
               </div>
             </article>
           ))}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   )
