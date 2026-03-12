@@ -39,7 +39,7 @@ interface PostState {
   deleteComment: (postId: number, commentId: number) => Promise<void>
 }
 
-export const usePostStore = create<PostState>((set, get) => ({
+export const usePostStore = create<PostState>((set) => ({
   posts: [],
   currentPost: null,
   currentPostScraps: [],
@@ -74,31 +74,34 @@ export const usePostStore = create<PostState>((set, get) => ({
     set({ isLoading: true, error: null, currentPost: null, currentPostScraps: [], currentComments: [], isLiked: false })
     const { token } = useAuthStore.getState()
     try {
-      const response = await fetch(`${API_URL}/posts/${id}`, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
-      })
-      if (!response.ok) {
-        throw new Error('Failed to fetch post')
-      }
-      const data = await response.json()
+      const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
       
+      const [postRes, commentsRes] = await Promise.all([
+        fetch(`${API_URL}/posts/${id}`, { headers: authHeaders }),
+        fetch(`${API_URL}/posts/${id}/comments`, { headers: authHeaders })
+      ])
+
+      if (!postRes.ok) throw new Error('Failed to fetch post')
+      
+      const data = await postRes.json()
       const formattedPost = {
         ...data.post,
         tags: JSON.parse(data.post.tags || '[]'),
         scrap_ids: JSON.parse(data.post.scrap_ids || '[]')
       }
 
+      let commentsData = []
+      if (commentsRes.ok) {
+        commentsData = await commentsRes.json()
+      }
+
       set({ 
         currentPost: formattedPost, 
         currentPostScraps: data.scraps, 
+        currentComments: commentsData,
         isLiked: data.isLiked || false,
         isLoading: false 
       })
-      
-      // Also fetch comments
-      await get().fetchComments(id)
     } catch (err: any) {
       set({ error: err.message || '게시글을 불러오는데 실패했습니다.', isLoading: false })
     }
@@ -227,10 +230,10 @@ export const usePostStore = create<PostState>((set, get) => ({
       
       const data = await response.json()
       
-      // Re-fetch comments and update current post comment count
-      await get().fetchComments(id)
+      // Optimistic update: avoid sequential fetchComments by using the newly added comment returned from backend
       set((state) => ({
-         currentPost: state.currentPost ? { ...state.currentPost, comments: data.comments } : null
+         currentPost: state.currentPost ? { ...state.currentPost, comments: data.comments } : null,
+         currentComments: [...state.currentComments, data.comment]
       }))
     } catch (err: any) {
       console.error(err)
@@ -255,10 +258,10 @@ export const usePostStore = create<PostState>((set, get) => ({
       
       const data = await response.json()
       
-      // Re-fetch comments and update current post comment count
-      await get().fetchComments(postId)
+      // Optimistic update: manually remove from state to avoid extra network request
       set((state) => ({
-         currentPost: state.currentPost ? { ...state.currentPost, comments: data.comments } : null
+         currentPost: state.currentPost ? { ...state.currentPost, comments: data.comments } : null,
+         currentComments: state.currentComments.filter(c => c.id !== commentId && c.parent_id !== commentId)
       }))
     } catch (err: any) {
       console.error(err)

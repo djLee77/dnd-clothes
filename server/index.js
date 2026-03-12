@@ -780,17 +780,36 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
     if (!content) return res.status(400).json({ error: 'Content is required' });
 
     try {
-        await pool.query(
-            'INSERT INTO post_comments (post_id, user_id, content, parent_id) VALUES ($1, $2, $3, $4)',
+        const insertRes = await pool.query(
+            'INSERT INTO post_comments (post_id, user_id, content, parent_id) VALUES ($1, $2, $3, $4) RETURNING id, created_at',
             [postId, userId, content, parent_id || null]
         );
+        const { id: newCommentId, created_at } = insertRes.rows[0];
+
+        // Fetch user info for the new comment
+        const userRes = await pool.query('SELECT username, profile_image, handle FROM users WHERE id = $1', [userId]);
+        const user = userRes.rows[0];
 
         // Update comments count on post
         await pool.query('UPDATE posts SET comments = comments + 1 WHERE id = $1', [postId]);
 
         const updatedPost = await pool.query('SELECT comments FROM posts WHERE id = $1', [postId]);
 
-        res.status(201).json({ message: 'Comment added', comments: updatedPost.rows[0].comments });
+        const newComment = {
+            id: newCommentId,
+            post_id: parseInt(postId),
+            user_id: userId,
+            content,
+            parent_id: parent_id || null,
+            created_at,
+            author: user.username,
+            author_profile_image: user.profile_image,
+            author_handle: user.handle,
+            likes: 0,
+            isLiked: false
+        };
+
+        res.status(201).json({ message: 'Comment added', comments: updatedPost.rows[0].comments, comment: newComment });
     } catch (err) {
         console.error('Failed to add comment:', err);
         res.status(500).json({ error: 'Failed to add comment' });
