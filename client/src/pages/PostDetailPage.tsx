@@ -25,6 +25,7 @@ export const PostDetailPage = () => {
   const [commentText, setCommentText] = useState('')
   const [replyToId, setReplyToId] = useState<number | null>(null)
   const [replyToAuthor, setReplyToAuthor] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const commentInputRef = useRef<HTMLInputElement>(null)
   const { currentPost, currentPostScraps, currentComments, isLiked, isLoading, fetchPost, toggleLike, toggleCommentLike, addComment, error } = usePostStore()
   const { user } = useAuthStore()
@@ -88,7 +89,8 @@ export const PostDetailPage = () => {
   }
 
   const handleCommentSubmit = async () => {
-    if (!commentText.trim() || !currentPost) return
+    if (!commentText.trim() || !currentPost || isSubmitting) return
+    setIsSubmitting(true)
     try {
       await addComment(currentPost.id, commentText.trim(), replyToId)
       setCommentText('')
@@ -96,11 +98,15 @@ export const PostDetailPage = () => {
       setReplyToAuthor(null)
     } catch (e) {
       console.error(e)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing) return
     if (e.key === 'Enter') {
+      e.preventDefault()
       handleCommentSubmit()
     }
   }
@@ -281,10 +287,10 @@ export const PostDetailPage = () => {
                  />
                  <button 
                    onClick={handleCommentSubmit}
-                   disabled={!commentText.trim()}
+                   disabled={!commentText.trim() || isSubmitting}
                    className="text-sm font-bold text-indigo-500 ml-2 whitespace-nowrap opacity-70 hover:opacity-100 transition-opacity disabled:opacity-50"
                  >
-                   게시
+                   {isSubmitting ? '게시 중...' : '게시'}
                  </button>
               </div>
            </div>

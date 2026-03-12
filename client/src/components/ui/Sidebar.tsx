@@ -321,7 +321,10 @@ export const Sidebar = () => {
                         onChange={(e) => setNewScrapName(e.target.value)}
                         placeholder="스크랩 이름..."
                         className="flex-1 px-5 py-3 bg-white border-none rounded-full text-sm font-medium focus:outline-none placeholder:text-gray-300"
-                        onKeyDown={(e) => e.key === 'Enter' && handleSaveScrap()}
+                        onKeyDown={(e) => {
+                            if (e.nativeEvent.isComposing) return
+                            if (e.key === 'Enter') handleSaveScrap()
+                        }}
                     />
                     <button 
                         onClick={handleSaveScrap}
@@ -395,7 +398,10 @@ export const Sidebar = () => {
                         onChange={(e) => setNewCategoryName(e.target.value)}
                         placeholder="새 카테고리..."
                         className="flex-1 px-5 py-3 bg-white border-none rounded-full text-sm font-medium focus:outline-none placeholder:text-gray-300"
-                        onKeyDown={(e) => e.key === 'Enter' && addCategory()}
+                        onKeyDown={(e) => {
+                            if (e.nativeEvent.isComposing) return
+                            if (e.key === 'Enter') addCategory()
+                        }}
                     />
                     <button 
                         onClick={addCategory}

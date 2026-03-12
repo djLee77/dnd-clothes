@@ -50,6 +50,7 @@ export const CreatePostPage = () => {
   }
 
   const handleTagKeyDown = (e: React.KeyboardEvent) => {
+    if (e.nativeEvent.isComposing) return
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault()
       handleAddTag()
