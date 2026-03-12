@@ -27,7 +27,7 @@ export const PostDetailPage = () => {
   const [replyToAuthor, setReplyToAuthor] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const commentInputRef = useRef<HTMLInputElement>(null)
-  const { currentPost, currentPostScraps, currentComments, isLiked, isLoading, fetchPost, toggleLike, toggleCommentLike, addComment, error } = usePostStore()
+  const { currentPost, currentPostScraps, currentComments, isLiked, isLoading, fetchPost, toggleLike, toggleCommentLike, addComment, deleteComment, error } = usePostStore()
   const { user } = useAuthStore()
 
   useEffect(() => {
@@ -108,6 +108,17 @@ export const PostDetailPage = () => {
     if (e.key === 'Enter') {
       e.preventDefault()
       handleCommentSubmit()
+    }
+  }
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!currentPost) return;
+    if (window.confirm('댓글을 삭제하시겠습니까?')) {
+      try {
+        await deleteComment(currentPost.id, commentId);
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 
@@ -330,6 +341,9 @@ export const PostDetailPage = () => {
                         <div className="flex gap-3 mt-1 text-xs text-gray-500 font-medium">
                           <span>{new Date(comment.created_at).toLocaleDateString('ko-KR')}</span>
                           <button onClick={() => { setReplyToId(comment.id); setReplyToAuthor(comment.author); commentInputRef.current?.focus(); }} className="font-bold text-gray-400 hover:text-gray-600">답글 달기</button>
+                          {user && (user.id === currentPost.user_id || user.id === comment.user_id) && (
+                            <button onClick={() => handleDeleteComment(comment.id)} className="font-bold text-red-400 hover:text-red-600">삭제</button>
+                          )}
                         </div>
                     </div>
                     <div className="flex flex-col items-center ml-2 mt-1">
@@ -374,6 +388,9 @@ export const PostDetailPage = () => {
                           <div className="flex gap-3 mt-1 text-xs text-gray-500 font-medium">
                             <span>{new Date(reply.created_at).toLocaleDateString('ko-KR')}</span>
                             <button onClick={() => { setReplyToId(comment.id); setReplyToAuthor(comment.author); commentInputRef.current?.focus(); }} className="font-bold text-gray-400 hover:text-gray-600">답글 달기</button>
+                            {user && (user.id === currentPost.user_id || user.id === reply.user_id) && (
+                              <button onClick={() => handleDeleteComment(reply.id)} className="font-bold text-red-400 hover:text-red-600">삭제</button>
+                            )}
                           </div>
                       </div>
                       <div className="flex flex-col items-center ml-2 mt-1">

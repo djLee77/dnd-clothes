@@ -36,6 +36,7 @@ interface PostState {
   toggleCommentLike: (id: number) => Promise<void>
   fetchComments: (id: number) => Promise<void>
   addComment: (id: number, content: string, parent_id?: number | null) => Promise<void>
+  deleteComment: (postId: number, commentId: number) => Promise<void>
 }
 
 export const usePostStore = create<PostState>((set, get) => ({
@@ -228,6 +229,34 @@ export const usePostStore = create<PostState>((set, get) => ({
       
       // Re-fetch comments and update current post comment count
       await get().fetchComments(id)
+      set((state) => ({
+         currentPost: state.currentPost ? { ...state.currentPost, comments: data.comments } : null
+      }))
+    } catch (err: any) {
+      console.error(err)
+      throw err
+    }
+  },
+
+  deleteComment: async (postId: number, commentId: number) => {
+    const { token } = useAuthStore.getState()
+    if (!token) {
+       alert('로그인이 필요한 기능입니다.')
+       return
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/posts/${postId}/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      checkAuthResponse(response)
+      if (!response.ok) throw new Error('Failed to delete comment')
+      
+      const data = await response.json()
+      
+      // Re-fetch comments and update current post comment count
+      await get().fetchComments(postId)
       set((state) => ({
          currentPost: state.currentPost ? { ...state.currentPost, comments: data.comments } : null
       }))

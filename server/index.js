@@ -797,6 +797,44 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
     }
 });
 
+// Delete Post Comment
+app.delete('/api/posts/:postId/comments/:commentId', authenticateToken, async (req, res) => {
+    const { postId, commentId } = req.params;
+    const userId = req.user.userId;
+
+    try {
+        // Find comment and post details to check permissions
+        const commentRes = await pool.query('SELECT user_id FROM post_comments WHERE id = $1 AND post_id = $2', [commentId, postId]);
+        if (commentRes.rows.length === 0) return res.status(404).json({ error: 'Comment not found' });
+
+        const postRes = await pool.query('SELECT user_id FROM posts WHERE id = $1', [postId]);
+        if (postRes.rows.length === 0) return res.status(404).json({ error: 'Post not found' });
+
+        const commentAuthorId = commentRes.rows[0].user_id;
+        const postAuthorId = postRes.rows[0].user_id;
+
+        // Check if user is either the comment author or the post author
+        if (commentAuthorId !== userId && postAuthorId !== userId) {
+            return res.status(403).json({ error: 'You do not have permission to delete this comment' });
+        }
+
+        await pool.query('DELETE FROM post_comments WHERE id = $1', [commentId]);
+
+        // Recalculate post comments count due to potential cascade deletions of replies
+        await pool.query(
+            'UPDATE posts SET comments = (SELECT COUNT(*) FROM post_comments WHERE post_id = $1) WHERE id = $1',
+            [postId]
+        );
+
+        const updatedPost = await pool.query('SELECT comments FROM posts WHERE id = $1', [postId]);
+
+        res.json({ message: 'Comment deleted successfully', comments: updatedPost.rows[0].comments });
+    } catch (err) {
+        console.error('Failed to delete comment:', err);
+        res.status(500).json({ error: 'Failed to delete comment' });
+    }
+});
+
 // Toggle Comment Like
 app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
     const commentId = req.params.id;
