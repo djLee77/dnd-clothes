@@ -642,11 +642,14 @@ app.delete('/api/assets/:id', authenticateToken, async (req, res) => {
 app.get('/api/posts', async (req, res) => {
     try {
         // Does not require authentication to read posts
+        // Optimization: Reduce JSON payload by truncating content and applying LIMIT
         const result = await pool.query(`
-            SELECT p.*, u.username as author, u.profile_image as author_profile_image, u.handle as author_handle
+            SELECT p.id, p.user_id, p.title, SUBSTRING(p.content FROM 1 FOR 200) as content, p.tags, p.thumbnail, p.views, p.likes, p.comments, p.created_at, 
+                   u.username as author, u.profile_image as author_profile_image, u.handle as author_handle
             FROM posts p
             JOIN users u ON p.user_id = u.id
             ORDER BY p.created_at DESC
+            LIMIT 50
         `);
         res.json(result.rows);
     } catch (err) {
@@ -818,10 +821,9 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
         const userRes = await pool.query('SELECT username, profile_image, handle FROM users WHERE id = $1', [userId]);
         const user = userRes.rows[0];
 
-        // Update comments count on post
-        await pool.query('UPDATE posts SET comments = comments + 1 WHERE id = $1', [postId]);
-
-        const updatedPost = await pool.query('SELECT comments FROM posts WHERE id = $1', [postId]);
+        // Update comments count on post and retrieve it instantly in one query
+        const updateRes = await pool.query('UPDATE posts SET comments = comments + 1 WHERE id = $1 RETURNING comments', [postId]);
+        const updatedCommentsCount = updateRes.rows[0].comments;
 
         const newComment = {
             id: newCommentId,
@@ -837,7 +839,7 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
             isLiked: false
         };
 
-        res.status(201).json({ message: 'Comment added', comments: updatedPost.rows[0].comments, comment: newComment });
+        res.status(201).json({ message: 'Comment added', comments: updatedCommentsCount, comment: newComment });
     } catch (err) {
         console.error('Failed to add comment:', err);
         res.status(500).json({ error: 'Failed to add comment' });
